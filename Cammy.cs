@@ -4,7 +4,7 @@ using Dalamud.Plugin;
 using Cammy.Attributes;
 
 [assembly: AssemblyTitle("Cammy")]
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.0.1")]
 
 namespace Cammy
 {
