@@ -48,6 +48,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         repository: ${{ env.PERSONAL_PLUGIN_REPO }}
+        token: ${{ secrets.PAT }}
 
     - uses: actions/download-artifact@v2
       with:
