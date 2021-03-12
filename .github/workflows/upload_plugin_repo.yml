@@ -58,4 +58,5 @@ jobs:
         add: --all
         author_name: GitHub Action
         author_email: github-actions[bot]@users.noreply.github.com
+        branch: master
         message: Update ${{ env.INTERNAL_NAME }}
