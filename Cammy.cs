@@ -1,0 +1,73 @@
+﻿using System;
+using System.Reflection;
+using Dalamud.Plugin;
+using Cammy.Attributes;
+
+[assembly: AssemblyTitle("Cammy")]
+[assembly: AssemblyVersion("1.0.0.0")]
+
+namespace Cammy
+{
+    public class Cammy : IDalamudPlugin
+    {
+        public static DalamudPluginInterface Interface { get; private set; }
+        private PluginCommandManager<Cammy> commandManager;
+        public static Configuration Config { get; private set; }
+        public static Cammy Plugin { get; private set; }
+
+        private CameraEditor camEdit;
+
+        public string Name => "Cammy";
+
+        public void Initialize(DalamudPluginInterface p)
+        {
+            Plugin = this;
+            Interface = p;
+
+            Config = (Configuration)Interface.GetPluginConfig() ?? new Configuration();
+            Config.Initialize(Interface);
+
+            Interface.ClientState.OnLogin += OnLogin;
+            Interface.ClientState.OnLogout += OnLogout;
+            Interface.UiBuilder.OnBuildUi += Draw;
+
+            commandManager = new PluginCommandManager<Cammy>(this, Interface);
+
+            camEdit = new CameraEditor();
+        }
+
+        [Command("/cammy")]
+        [HelpMessage("Opens/closes the config.")]
+        private void OnCameraEditor(string command, string argument) => camEdit.editorVisible = !camEdit.editorVisible;
+
+        public static void PrintEcho(string message) => Interface.Framework.Gui.Chat.Print($"[Cammy] {message}");
+        public static void PrintError(string message) => Interface.Framework.Gui.Chat.PrintError($"[Cammy] {message}");
+
+        private void Draw() => camEdit.Draw();
+        private void OnLogin(object sender, EventArgs e) => camEdit.OnLogin();
+        private void OnLogout(object sender, EventArgs e) => camEdit.OnLogout();
+
+        #region IDisposable Support
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing) return;
+
+            commandManager.Dispose();
+
+            Interface.SavePluginConfig(Config);
+
+            Interface.ClientState.OnLogin -= OnLogin;
+            Interface.ClientState.OnLogout -= OnLogout;
+            Interface.UiBuilder.OnBuildUi -= Draw;
+
+            Interface.Dispose();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
+    }
+}
