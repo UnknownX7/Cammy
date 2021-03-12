@@ -43,9 +43,9 @@ namespace Cammy
         public static void PrintEcho(string message) => Interface.Framework.Gui.Chat.Print($"[Cammy] {message}");
         public static void PrintError(string message) => Interface.Framework.Gui.Chat.PrintError($"[Cammy] {message}");
 
-        private void Draw() => camEdit.Draw();
-        private void OnLogin(object sender, EventArgs e) => camEdit.OnLogin();
-        private void OnLogout(object sender, EventArgs e) => camEdit.OnLogout();
+        private void Draw() => camEdit?.Draw();
+        private void OnLogin(object sender, EventArgs e) => camEdit?.OnLogin();
+        private void OnLogout(object sender, EventArgs e) => camEdit?.OnLogout();
 
         #region IDisposable Support
         protected virtual void Dispose(bool disposing)
