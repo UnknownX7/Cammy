@@ -29,6 +29,7 @@ namespace Cammy
 
             Interface.ClientState.OnLogin += OnLogin;
             Interface.ClientState.OnLogout += OnLogout;
+            Interface.UiBuilder.OnOpenConfigUi += ToggleConfig;
             Interface.UiBuilder.OnBuildUi += Draw;
 
             commandManager = new PluginCommandManager<Cammy>(this, Interface);
@@ -36,9 +37,11 @@ namespace Cammy
             camEdit = new CameraEditor();
         }
 
+        public void ToggleConfig(object sender, EventArgs e) => ToggleConfig();
+
         [Command("/cammy")]
         [HelpMessage("Opens/closes the config.")]
-        private void OnCameraEditor(string command, string argument) => camEdit.editorVisible = !camEdit.editorVisible;
+        private void ToggleConfig(string command = null, string argument = null) => camEdit.editorVisible = !camEdit.editorVisible;
 
         public static void PrintEcho(string message) => Interface.Framework.Gui.Chat.Print($"[Cammy] {message}");
         public static void PrintError(string message) => Interface.Framework.Gui.Chat.PrintError($"[Cammy] {message}");
@@ -58,6 +61,7 @@ namespace Cammy
 
             Interface.ClientState.OnLogin -= OnLogin;
             Interface.ClientState.OnLogout -= OnLogout;
+            Interface.UiBuilder.OnOpenConfigUi -= ToggleConfig;
             Interface.UiBuilder.OnBuildUi -= Draw;
 
             Interface.Dispose();
