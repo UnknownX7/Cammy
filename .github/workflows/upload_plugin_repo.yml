@@ -52,6 +52,7 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
+        name: artifact
         path: plugins/${{ env.INTERNAL_NAME }}
 
     - uses: EndBug/add-and-commit@v7
