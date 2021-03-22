@@ -57,6 +57,8 @@ namespace Cammy
 
             commandManager.Dispose();
 
+            camEdit?.Dispose();
+
             Interface.SavePluginConfig(Config);
 
             Interface.ClientState.OnLogin -= OnLogin;

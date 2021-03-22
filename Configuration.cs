@@ -8,7 +8,6 @@ namespace Cammy
     {
         public int Version { get; set; }
 
-        public bool FixFoVBug = false;
         public bool AutoLoadCameraPreset = false;
         public CameraEditor.CameraPreset CameraPreset = new CameraEditor.CameraPreset();
 
