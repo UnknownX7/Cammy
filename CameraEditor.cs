@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using ImGuiNET;
 
 namespace Cammy
 {
     public class CameraEditor
     {
+        [DllImport("kernel32.dll")]
+        public static extern bool VirtualProtect(IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+
         public class CameraPreset
         {
             public float CurrentZoom = 6f;
             public float MinZoom = 1.5f;
             public float MaxZoom = 20f;
-            public float ScrollSpeed = 1f;
+            public float ZoomDelta = 0.75f;
 
             public float CurrentFoV = 0.78f;
             public float MinFoV = 0.69f;
@@ -42,20 +46,46 @@ namespace Cammy
         private unsafe ref int Mode => ref *(int*)(baseAddr + 0x170); // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
         private unsafe ref float CenterHeightOffset => ref *(float*)(baseAddr + 0x218);
 
+        // Disgusting .rdata
+        private readonly IntPtr zoomDeltaPtr;
+        private unsafe float ZoomDelta
+        {
+            get => *(float*)zoomDeltaPtr;
+            set
+            {
+                VirtualProtect(zoomDeltaPtr, 4, 0x40, out var p);
+                *(float*)zoomDeltaPtr = value;
+                VirtualProtect(zoomDeltaPtr, 4, p, out _);
+            }
+        }
+
         private CameraPreset Defaults => Cammy.Config.CameraPreset;
         public bool editorVisible = false;
         private bool zoomInitialized = false;
-        private float scrollSpeed = 1f;
         private float prevZoom = 0f;
 
         public unsafe CameraEditor()
         {
-            // 48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3 44 0F 10 86 90 00 00 00
-            var structPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3");
-            baseAddr = *(IntPtr*)structPtr;
+            try
+            {
+                var structPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // 48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3 44 0F 10 86 90 00 00 00
+                baseAddr = *(IntPtr*)structPtr;
 
-            if (Cammy.Config.AutoLoadCameraPreset && Cammy.Interface.ClientState.LocalPlayer != null)
-                LoadPreset(true);
+                // Can be found in Client__Game__Camera_vf28
+                // Alt: F3 0F 59 05 ?? ?? ?? ?? C7 83 D0 40 00 00 00 00 00 00
+                try
+                {
+                    // Why do it be this way
+                    var ptr = Cammy.Interface.TargetModuleScanner.ScanText("F3 44 0F 10 0D ?? ?? ?? ?? 45 0F 29 53 88") + 0x5;
+                    var offset = *(int*)ptr;
+                    zoomDeltaPtr = ptr + offset + 0x4;
+                } 
+                catch { }
+
+                if (Cammy.Config.AutoLoadCameraPreset && Cammy.Interface.ClientState.LocalPlayer != null)
+                    LoadPreset(true);
+            }
+            catch { }
         }
 
         public void SavePreset()
@@ -65,7 +95,7 @@ namespace Cammy
                 CurrentZoom = CurrentZoom,
                 MinZoom = MinZoom,
                 MaxZoom = MaxZoom,
-                ScrollSpeed = scrollSpeed,
+                ZoomDelta = (zoomDeltaPtr != IntPtr.Zero) ? ZoomDelta : Defaults.ZoomDelta,
 
                 CurrentFoV = CurrentFoV,
                 MinFoV = MinFoV,
@@ -87,7 +117,8 @@ namespace Cammy
                 CurrentZoom = preset.CurrentZoom;
             MinZoom = preset.MinZoom;
             MaxZoom = preset.MaxZoom;
-            scrollSpeed = preset.ScrollSpeed;
+            if (zoomDeltaPtr != IntPtr.Zero)
+                ZoomDelta = preset.ZoomDelta;
 
             if (!init)
                 CurrentFoV = preset.CurrentFoV;
@@ -120,11 +151,12 @@ namespace Cammy
                 ImGui.SetNextWindowSize(new Vector2(550, 0) * scale);
                 ImGui.Begin("Camera Editor", ref editorVisible, ImGuiWindowFlags.NoResize);
 
-                void ResetSliderFloat(string id, ref float val, float min, float max, float reset, float def, string format)
+                void ResetSliderFloat(string id, ref float val, float min, float max, float reset, float def, string format, Action<float> write = null)
                 {
                     if (ImGui.Button($"Reset##{id}"))
                     {
                         val = reset;
+                        write?.Invoke(val);
                         zoomInitialized = false;
                     }
                     if (ImGui.IsItemHovered())
@@ -133,20 +165,28 @@ namespace Cammy
                         if (ImGui.IsMouseReleased(ImGuiMouseButton.Right))
                         {
                             val = def;
+                            write?.Invoke(val);
                             zoomInitialized = false;
                         }
                     }
                     ImGui.SameLine();
                     if (ImGui.SliderFloat(id, ref val, min, max, format))
+                    {
+                        write?.Invoke(val);
                         zoomInitialized = false;
+                    }
                 }
 
                 ResetSliderFloat("Current Zoom", ref CurrentZoom, MinZoom, MaxZoom, Defaults.CurrentZoom, 6f, "%.2f");
                 ResetSliderFloat("Minimum Zoom", ref MinZoom, 1.5f, MaxZoom, Defaults.MinZoom, 1.5f, "%.2f");
                 ResetSliderFloat("Maximum Zoom", ref MaxZoom, MinZoom, 100f, Defaults.MaxZoom, 20f, "%.2f");
-                ResetSliderFloat("Scroll Speed", ref scrollSpeed, 0, 5f, Defaults.ScrollSpeed, 1f, "%.1f");
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip("Custom logic, not actually modifying memory so probably a bit buggy.");
+                if (zoomDeltaPtr != IntPtr.Zero)
+                {
+                    var _ = ZoomDelta;
+                    ResetSliderFloat("Zoom Delta", ref _, 0, 3f, Defaults.ZoomDelta, 0.75f, "%.2f", (val) => ZoomDelta = val);
+                }
+                else
+                    ResetSliderFloat("Zoom Delta", ref Defaults.ZoomDelta, 0, 3f, Defaults.ZoomDelta, 0.75f, "%.2f");
 
                 ImGui.Spacing();
                 ImGui.Spacing();
@@ -214,15 +254,20 @@ namespace Cammy
                 ImGui.End();
             }
 
-            if (Cammy.Interface.ClientState.LocalPlayer == null)
-                zoomInitialized = false;
+            // Fallback
+            if (zoomDeltaPtr == IntPtr.Zero)
+            {
+                if (Cammy.Interface.ClientState.LocalPlayer == null)
+                    zoomInitialized = false;
 
-            var delta = CurrentZoom - prevZoom;
-            if (delta != 0 && zoomInitialized && scrollSpeed != 1)
-                CurrentZoom = Math.Min(Math.Max(CurrentZoom + delta * (scrollSpeed - 1f), MinZoom), MaxZoom);
+                var delta = CurrentZoom - prevZoom;
+                var speed = Defaults.ZoomDelta / 0.75f;
+                if (delta != 0 && zoomInitialized && speed != 1)
+                    CurrentZoom = Math.Min(Math.Max(CurrentZoom + delta * (speed - 1f), MinZoom), MaxZoom);
 
-            prevZoom = CurrentZoom;
-            zoomInitialized = true;
+                prevZoom = CurrentZoom;
+                zoomInitialized = true;
+            }
         }
 
         // 0x0 static ptr to something (a camera?) (possibly world camera)
