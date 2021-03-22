@@ -18,6 +18,7 @@ namespace Cammy
             public float MinFoV = 0.69f;
             public float MaxFoV = 0.78f;
             public float FoVDelta = 0.08726646751f;
+            public float AddedFoV = 0f;
 
             public float CurrentVRotation = -0.349066f;
             public float MinVRotation = -1.483530f;
@@ -35,7 +36,7 @@ namespace Cammy
         private unsafe ref float CurrentFoV => ref *(float*)(baseAddr + 0x120); // 0.78
         private unsafe ref float MinFoV => ref *(float*)(baseAddr + 0x124); // 0.69
         private unsafe ref float MaxFoV => ref *(float*)(baseAddr + 0x128); // 0.78
-        private unsafe ref float AdditionalFoV => ref *(float*)(baseAddr + 0x12C); // 0
+        private unsafe ref float AddedFoV => ref *(float*)(baseAddr + 0x12C); // 0
         private unsafe ref float HRotation => ref *(float*)(baseAddr + 0x130); // -pi -> pi, default is pi
         private unsafe ref float CurrentVRotation => ref *(float*)(baseAddr + 0x134); // -0.349066
         private unsafe ref float MinVRotation => ref *(float*)(baseAddr + 0x148); // -1.483530, should be -+pi/2 for straight down/up but camera breaks so use -+1.569
@@ -89,6 +90,7 @@ namespace Cammy
                 MinFoV = MinFoV,
                 MaxFoV = MaxFoV,
                 FoVDelta = (foVDeltaPtr != IntPtr.Zero) ? FoVDelta : Defaults.FoVDelta,
+                AddedFoV = AddedFoV,
 
                 CurrentVRotation = CurrentVRotation,
                 MinVRotation = MinVRotation,
@@ -114,6 +116,7 @@ namespace Cammy
             MaxFoV = preset.MaxFoV;
             if (foVDeltaPtr != IntPtr.Zero)
                 FoVDelta = preset.FoVDelta;
+            AddedFoV = preset.AddedFoV;
 
             //if (!init)
             //    CurrentVRotation = preset.CurrentVRotation;
@@ -137,7 +140,7 @@ namespace Cammy
             {
                 var scale = ImGui.GetIO().FontGlobalScale;
                 ImGui.SetNextWindowSize(new Vector2(550, 0) * scale);
-                ImGui.Begin("Camera Editor", ref editorVisible, ImGuiWindowFlags.NoResize);
+                ImGui.Begin("Cammy Configuration", ref editorVisible, ImGuiWindowFlags.NoResize);
 
                 void ResetSliderFloat(string id, ref float val, float min, float max, float reset, float def, string format)
                 {
@@ -167,9 +170,9 @@ namespace Cammy
                 ResetSliderFloat("Maximum FoV", ref MaxFoV, MinFoV, 3f, Defaults.MaxFoV, 0.78f, "%f");
                 if (foVDeltaPtr != IntPtr.Zero)
                     ResetSliderFloat("FoV Delta", ref FoVDelta, 0, 0.5f, Defaults.FoVDelta, 0.08726646751f, "%f");
-                ResetSliderFloat("Added FoV (unsaved)", ref AdditionalFoV, 0f, 3f, 0f, 0f, "%f"); // Slightly useless but that's ok
+                ResetSliderFloat("Added FoV", ref AddedFoV, -1.56f, 2f, Defaults.AddedFoV, 0f, "%f"); // Slightly useless but that's ok
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip("In some zones, the fov will cause lag or crash if the total is 3.14.");
+                    ImGui.SetTooltip("In some weather, the fov will cause lag or crash if the total is 3.14.");
 
                 ImGui.Spacing();
                 ImGui.Spacing();
