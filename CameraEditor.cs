@@ -27,23 +27,23 @@ namespace Cammy
             public float CenterHeightOffset = 0f;
         }
 
-        private readonly IntPtr baseAddr;
-        public IntPtr this[int k] => baseAddr + k;
+        private readonly IntPtr cameraObject;
+        public IntPtr this[int k] => cameraObject + k;
 
-        private unsafe ref float CurrentZoom => ref *(float*)(baseAddr + 0x114); // 6
-        private unsafe ref float MinZoom => ref *(float*)(baseAddr + 0x118); // 1.5
-        private unsafe ref float MaxZoom => ref *(float*)(baseAddr + 0x11C); // 20
-        private unsafe ref float CurrentFoV => ref *(float*)(baseAddr + 0x120); // 0.78
-        private unsafe ref float MinFoV => ref *(float*)(baseAddr + 0x124); // 0.69
-        private unsafe ref float MaxFoV => ref *(float*)(baseAddr + 0x128); // 0.78
-        private unsafe ref float AddedFoV => ref *(float*)(baseAddr + 0x12C); // 0
-        private unsafe ref float HRotation => ref *(float*)(baseAddr + 0x130); // -pi -> pi, default is pi
-        private unsafe ref float CurrentVRotation => ref *(float*)(baseAddr + 0x134); // -0.349066
-        private unsafe ref float MinVRotation => ref *(float*)(baseAddr + 0x148); // -1.483530, should be -+pi/2 for straight down/up but camera breaks so use -+1.569
-        private unsafe ref float MaxVRotation => ref *(float*)(baseAddr + 0x14C); // 0.785398 (pi/4)
-        private unsafe ref float Tilt => ref *(float*)(baseAddr + 0x160);
-        private unsafe ref int Mode => ref *(int*)(baseAddr + 0x170); // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
-        private unsafe ref float CenterHeightOffset => ref *(float*)(baseAddr + 0x218);
+        private unsafe ref float CurrentZoom => ref *(float*)(cameraObject + 0x114); // 6
+        private unsafe ref float MinZoom => ref *(float*)(cameraObject + 0x118); // 1.5
+        private unsafe ref float MaxZoom => ref *(float*)(cameraObject + 0x11C); // 20
+        private unsafe ref float CurrentFoV => ref *(float*)(cameraObject + 0x120); // 0.78
+        private unsafe ref float MinFoV => ref *(float*)(cameraObject + 0x124); // 0.69
+        private unsafe ref float MaxFoV => ref *(float*)(cameraObject + 0x128); // 0.78
+        private unsafe ref float AddedFoV => ref *(float*)(cameraObject + 0x12C); // 0
+        private unsafe ref float HRotation => ref *(float*)(cameraObject + 0x130); // -pi -> pi, default is pi
+        private unsafe ref float CurrentVRotation => ref *(float*)(cameraObject + 0x134); // -0.349066
+        private unsafe ref float MinVRotation => ref *(float*)(cameraObject + 0x148); // -1.483530, should be -+pi/2 for straight down/up but camera breaks so use -+1.569
+        private unsafe ref float MaxVRotation => ref *(float*)(cameraObject + 0x14C); // 0.785398 (pi/4)
+        private unsafe ref float Tilt => ref *(float*)(cameraObject + 0x160);
+        private unsafe ref int Mode => ref *(int*)(cameraObject + 0x170); // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
+        private unsafe ref float CenterHeightOffset => ref *(float*)(cameraObject + 0x218);
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
         private float zoomDelta = 0.75f;
@@ -63,10 +63,10 @@ namespace Cammy
             try
             {
                 var structPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // 48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3 44 0F 10 86 90 00 00 00
-                baseAddr = *(IntPtr*)structPtr;
+                cameraObject = *(IntPtr*)structPtr;
 
-                // Client__Game__Camera_vf27
-                GetZoomDeltaHook = new Hook<GetZoomDeltaDelegate>(Cammy.Interface.TargetModuleScanner.ScanText("F3 0F 10 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC F3 0F 10 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC 40 53"), new GetZoomDeltaDelegate(GetZoomDeltaDetour));
+                var vtbl = (IntPtr*)(*(IntPtr*)cameraObject);
+                GetZoomDeltaHook = new Hook<GetZoomDeltaDelegate>(*(vtbl + 27), new GetZoomDeltaDelegate(GetZoomDeltaDetour)); // Client__Game__Camera_vf27
                 GetZoomDeltaHook.Enable();
 
                 foVDeltaPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
