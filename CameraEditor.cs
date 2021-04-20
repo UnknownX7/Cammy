@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Dalamud.Hooking;
 using ImGuiNET;
@@ -227,10 +227,10 @@ namespace Cammy
             GetZoomDeltaHook?.Dispose();
         }
 
-        // 0x0 static ptr to something (a camera?) (possibly world camera)
-        // 0x8 ??? 0 (might be another camera ptr)
-        // 0x10 static ptr to something (a camera?) (gpose?)
-        // 0x18 ??? 0 (might be another camera ptr)
+        // 0x0 vtbl
+        // 0x8 ??? 0
+        // 0x10 static ptr to something
+        // 0x18 ??? 0
         // 0x20 ??? 0
         // 0x28 ??? 0
         // 0x30 ptr to 0x10?
@@ -388,5 +388,41 @@ namespace Cammy
 
         // No longer seems to be camera related, who knows what this is
         // 0x2A8
+
+
+
+        // vtbl
+        // 0 - delete? crashes
+        // 1 - init? resets camera to certain angle + distance
+        // 2 - ??? requires 3 arguments
+        // 3 - ??? crashes
+        // 4 - reset camera angle
+        // 5 - ???
+        // 6 - ???
+        // 7 - duplicate of 4
+        // 8 - ??? requires 4 arguments
+        // 9 - ???
+        // 10 - ???
+        // 11 - ??? looks like it returns a bool?
+        // 12 - ??? (looks like it does something with inputs)
+        // 13 - ??? crashes
+        // 14 - ??? requires 4 arguments
+        // 15 - ??? requires 2 arguments
+        // 16 - ??? (looks like it does something with targeting)
+        // 17 - ??? crashes
+        // 18 - ??? requires 2 arguments
+        // 19 - ??? (looks like it does something with targeting)
+        // 20 - ??? requires 2 arguments
+        // 21 - ??? looks like it returns a bool?
+        // 22 - ??? causes a "camera position set" toast with no obvious effect
+        // 23 - loads the camera angle from 22
+        // 24 - causes a "camera position restored to default" toast and causes an effect similar to 1, but doesnt change horizontal angle to default
+        // 25 - ??? places the camera really high above character
+        // 26 - get max distance? doesnt seem to return anything except 20 ever though
+        // 27 - get scroll amount
+        // 28 - get ??? (1)
+        // 29 - ???
+        // 30 - duplicate of 28
+        // 31 - duplicate of 28
     }
 }
