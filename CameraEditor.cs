@@ -55,6 +55,8 @@ namespace Cammy
         private readonly IntPtr foVDeltaPtr;
         private unsafe ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
+        public readonly Memory.Replacer cameraNoCollideReplacer = new Memory.Replacer("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+
         private CameraPreset Defaults => Cammy.Config.CameraPreset;
         public bool editorVisible = false;
 
@@ -204,6 +206,14 @@ namespace Cammy
                 ImGui.SameLine();
                 ImGui.SliderInt("???", ref Mode, 0, 2);
 
+                if (cameraNoCollideReplacer.IsValid)
+                {
+                    ImGui.Spacing();
+                    var _ = cameraNoCollideReplacer.IsEnabled;
+                    if (ImGui.Checkbox("Disable Camera Collision", ref _))
+                        cameraNoCollideReplacer.Toggle();
+                }
+
                 ImGui.Spacing();
                 ImGui.Spacing();
 
@@ -254,9 +264,9 @@ namespace Cammy
         // 0x84 ??? 1? no apparent effect
         // 0x88 ??? 1? no apparent effect
         // 0x8C ??? no apparent effect
-        // 0x90 camera pos? cant change
-        // 0x94 camera pos? cant change
-        // 0x98 camera pos? cant change
+        // 0x90 position camera is fixed on, cant change
+        // 0x94 position camera is fixed on, cant change
+        // 0x98 position camera is fixed on, cant change
         // 0x9C ??? no apparent effect
         // 0xA0 camera angle? cant change
         // 0xA4 camera angle? cant change
@@ -279,7 +289,7 @@ namespace Cammy
         // 0xE8 seems to be camera position??? to determine whether to show name tags
         // 0xEC ??? no apparent effect
         // 0xF0 pointer to something
-        // 0xF8 ??? no apparent effect, cant change from 0?
+        // 0xF8 ??? no apparent effect, cant change from 0? (copy of tilt?)
         // 0xFC ??? possible bitset, changing to even numbers completely kills sound and makes the entire screen blue, changing back seems to load things again, but not restore sound, 3 is default?
         // 0x100 ??? randomly changing value, cant change
         // 0x104 ??? no apparent effect
@@ -392,18 +402,18 @@ namespace Cammy
 
 
         // vtbl
-        // 0 - delete? crashes
-        // 1 - init? resets camera to certain angle + distance
-        // 2 - ??? requires 3 arguments
+        // 0 - Dispose
+        // 1 - Init
+        // 2 - onUpdate
         // 3 - ??? crashes
         // 4 - reset camera angle
         // 5 - ???
-        // 6 - ???
+        // 6 - ??? get position / rotation?
         // 7 - duplicate of 4
         // 8 - ??? requires 4 arguments
-        // 9 - ???
-        // 10 - ???
-        // 11 - ??? looks like it returns a bool?
+        // 9 - empty function
+        // 10 - empty function
+        // 11 - ??? looks like it returns a bool? (runs whenever the camera gets too close to the character)
         // 12 - ??? (looks like it does something with inputs)
         // 13 - ??? crashes
         // 14 - ??? requires 4 arguments

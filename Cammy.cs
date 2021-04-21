@@ -58,6 +58,7 @@ namespace Cammy
             commandManager.Dispose();
 
             camEdit?.Dispose();
+            Memory.Dispose();
 
             Interface.SavePluginConfig(Config);
 
