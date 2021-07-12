@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Dalamud.Hooking;
+using Dalamud.Interface;
 using ImGuiNET;
 
 namespace Cammy
@@ -31,6 +32,8 @@ namespace Cammy
         public Structures.GameCamera worldCamera;
         public Structures.GameCamera menuCamera;
         public Structures.GameCamera spectatorCamera;
+
+        public Structures.GameCamera freeCamera;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
         private float zoomDelta = 0.75f;
@@ -118,6 +121,37 @@ namespace Cammy
             //CenterHeightOffset = preset.CenterHeightOffset;
         }
 
+        public unsafe void ToggleFreecam()
+        {
+            var enable = freeCamera == null;
+            if (enable)
+            {
+                freeCamera = menuCamera;
+                *(byte*)(freeCamera.Address + 0x2A0) = 0;
+                freeCamera.MinVRotation = -1.569f;
+                freeCamera.MaxVRotation = 1.569f;
+                cameraNoCollideReplacer.Enable();
+            }
+            else
+            {
+                freeCamera = null;
+                cameraNoCollideReplacer.Disable();
+            }
+
+            static void ToggleAddonVisible(string name)
+            {
+                var addon = Cammy.Interface.Framework.Gui.GetUiObjectByName(name, 1);
+                if (addon == IntPtr.Zero) return;
+
+                *(byte*)(addon + Dalamud.Game.Internal.Gui.Structs.AddonOffsets.Flags) ^= 0x20;
+            }
+
+            ToggleAddonVisible("_TitleRights");
+            ToggleAddonVisible("_TitleRevision");
+            ToggleAddonVisible("_TitleMenu");
+            ToggleAddonVisible("_TitleLogo");
+        }
+
         public void OnLogin()
         {
             if (Cammy.Config.AutoLoadCameraPreset)
@@ -126,15 +160,83 @@ namespace Cammy
 
         public void OnLogout() { }
 
+        public void Update()
+        {
+            if (freeCamera == null) return;
+
+            var keyState = Cammy.Interface.ClientState.KeyState;
+
+            if (keyState[27] || Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) == IntPtr.Zero) // Esc
+            {
+                ToggleFreecam();
+                return;
+            }
+
+            var movePos = Vector3.Zero;
+
+            if (keyState[87]) // W
+                movePos.X += 1;
+
+            if (keyState[65]) // A
+                movePos.Y += 1;
+
+            if (keyState[83]) // S
+                movePos.X += -1;
+
+            if (keyState[68]) // D
+                movePos.Y += -1;
+
+            if (keyState[32]) // Space
+                movePos.Z += 1;
+
+            if (keyState[67]) // C
+            {
+                freeCamera.X = 0;
+                freeCamera.Y = 0;
+                freeCamera.Z = 0;
+                freeCamera.Z2 = 0;
+            }
+
+            if (movePos == Vector3.Zero) return;
+
+            movePos *= ImGui.GetIO().DeltaTime * 20;
+
+            if (ImGui.GetIO().KeyShift)
+                movePos *= 10;
+
+            var amount = movePos.X;
+            var vamount = amount * (float)(freeCamera.CurrentVRotation / (Math.PI / 2f));
+            amount -= (amount >= 0) ? Math.Abs(vamount) : -Math.Abs(vamount);
+            freeCamera.Z2 = freeCamera.Z += vamount + movePos.Z;
+
+            var theta = freeCamera.HRotation + Math.PI;
+            freeCamera.X += amount * (float)Math.Sin(theta) + movePos.Y * (float)Math.Sin(theta + Math.PI / 2f);
+            freeCamera.Y += amount * (float)Math.Cos(theta) + movePos.Y * (float)Math.Cos(theta + Math.PI / 2f);
+        }
+
         public void Draw()
         {
+            if (freeCamera == null && Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) != IntPtr.Zero)
+            {
+                ImGuiHelpers.ForceNextWindowMainViewport();
+                var size = new Vector2(50) * ImGuiHelpers.GlobalScale;
+                ImGui.SetNextWindowSize(size, ImGuiCond.Always);
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(ImGuiHelpers.MainViewport.Size.X - size.X, 0), ImGuiCond.Always);
+                ImGui.Begin("Freecam Button", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing);
+
+                if (ImGui.IsWindowHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+                    ToggleFreecam();
+
+                ImGui.End();
+            }
+
             if (!editorVisible) return;
 
             var scale = ImGui.GetIO().FontGlobalScale;
             ImGui.SetNextWindowSize(new Vector2(550, 0) * scale);
             ImGui.Begin("Cammy Configuration", ref editorVisible, ImGuiWindowFlags.NoResize);
 
-            void ResetSliderFloat(string id, ref float val, float min, float max, float reset, float def, string format)
+            static void ResetSliderFloat(string id, ref float val, float min, float max, float reset, float def, string format)
             {
                 if (ImGui.Button($"Reset##{id}"))
                     val = reset;

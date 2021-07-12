@@ -5,7 +5,7 @@ using Dalamud.Plugin;
 using Cammy.Attributes;
 
 [assembly: AssemblyTitle("Cammy")]
-[assembly: AssemblyVersion("1.0.2.0")]
+[assembly: AssemblyVersion("1.1.0.0")]
 
 namespace Cammy
 {
@@ -28,6 +28,7 @@ namespace Cammy
             Config = (Configuration)Interface.GetPluginConfig() ?? new Configuration();
             Config.Initialize(Interface);
 
+            Interface.Framework.OnUpdateEvent += Update;
             Interface.ClientState.OnLogin += OnLogin;
             Interface.ClientState.OnLogout += OnLogout;
             Interface.UiBuilder.OnOpenConfigUi += ToggleConfig;
@@ -47,6 +48,7 @@ namespace Cammy
         public static void PrintEcho(string message) => Interface.Framework.Gui.Chat.Print($"[Cammy] {message}");
         public static void PrintError(string message) => Interface.Framework.Gui.Chat.PrintError($"[Cammy] {message}");
 
+        private void Update(Dalamud.Game.Internal.Framework framework) => camEdit?.Update();
         private void Draw() => camEdit?.Draw();
         private void OnLogin(object sender, EventArgs e) => camEdit?.OnLogin();
         private void OnLogout(object sender, EventArgs e) => camEdit?.OnLogout();
@@ -63,6 +65,7 @@ namespace Cammy
 
             Interface.SavePluginConfig(Config);
 
+            Interface.Framework.OnUpdateEvent -= Update;
             Interface.ClientState.OnLogin -= OnLogin;
             Interface.ClientState.OnLogout -= OnLogout;
             Interface.UiBuilder.OnOpenConfigUi -= ToggleConfig;

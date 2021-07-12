@@ -6,23 +6,24 @@ namespace Cammy.Structures
     {
         public static class Offsets
         {
-            public const short X                  = 0x90;
-            public const short Y                  = 0x94;
-            public const short Z                  = 0x98;
-            public const short CurrentZoom        = 0x114;
-            public const short MinZoom            = 0x118;
-            public const short MaxZoom            = 0x11C;
-            public const short CurrentFoV         = 0x120;
-            public const short MinFoV             = 0x124;
-            public const short MaxFoV             = 0x128;
-            public const short AddedFoV           = 0x12C;
-            public const short HRotation          = 0x130;
-            public const short CurrentVRotation   = 0x134;
-            public const short MinVRotation       = 0x148;
-            public const short MaxVRotation       = 0x14C;
-            public const short Tilt               = 0x160;
-            public const short Mode               = 0x170;
-            public const short CenterHeightOffset = 0x218;
+            public const ushort X                  = 0x90;
+            public const ushort Z                  = 0x94;
+            public const ushort Y                  = 0x98;
+            public const ushort CurrentZoom        = 0x114;
+            public const ushort MinZoom            = 0x118;
+            public const ushort MaxZoom            = 0x11C;
+            public const ushort CurrentFoV         = 0x120;
+            public const ushort MinFoV             = 0x124;
+            public const ushort MaxFoV             = 0x128;
+            public const ushort AddedFoV           = 0x12C;
+            public const ushort HRotation          = 0x130;
+            public const ushort CurrentVRotation   = 0x134;
+            public const ushort MinVRotation       = 0x148;
+            public const ushort MaxVRotation       = 0x14C;
+            public const ushort Tilt               = 0x160;
+            public const ushort Mode               = 0x170;
+            public const ushort CenterHeightOffset = 0x218;
+            public const ushort Z2                 = 0x2B4;
         }
 
         public readonly IntPtr Address;
@@ -32,6 +33,7 @@ namespace Cammy.Structures
         public ref float X => ref *(float*)(Address + Offsets.X);
         public ref float Y => ref *(float*)(Address + Offsets.Y);
         public ref float Z => ref *(float*)(Address + Offsets.Z);
+        public ref float Z2 => ref *(float*)(Address + Offsets.Z2);
         public ref float CurrentZoom => ref *(float*)(Address + Offsets.CurrentZoom); // 6
         public ref float MinZoom => ref *(float*)(Address + Offsets.MinZoom); // 1.5
         public ref float MaxZoom => ref *(float*)(Address + Offsets.MaxZoom); // 20
