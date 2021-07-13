@@ -128,8 +128,10 @@ namespace Cammy
             {
                 freeCamera = menuCamera;
                 *(byte*)(freeCamera.Address + 0x2A0) = 0;
-                freeCamera.MinVRotation = -1.569f;
-                freeCamera.MaxVRotation = 1.569f;
+                freeCamera.MinVRotation = -1.559f;
+                freeCamera.MaxVRotation = 1.559f;
+                freeCamera.CurrentFoV = freeCamera.MinFoV = freeCamera.MaxFoV = 0.78f;
+                freeCamera.CurrentZoom = freeCamera.MinZoom = freeCamera.MaxZoom = freeCamera.AddedFoV = 0;
                 cameraNoCollideReplacer.Enable();
             }
             else
@@ -203,15 +205,15 @@ namespace Cammy
 
             if (ImGui.GetIO().KeyShift)
                 movePos *= 10;
+            const double halfPI = Math.PI / 2f;
+            var hAngle = freeCamera.HRotation + halfPI;
+            var vAngle = freeCamera.CurrentVRotation;
+            var direction = new Vector3((float)(Math.Cos(hAngle) * Math.Cos(vAngle)), -(float)(Math.Sin(hAngle) * Math.Cos(vAngle)), (float)Math.Sin(vAngle));
 
-            var amount = movePos.X;
-            var vamount = amount * (float)(freeCamera.CurrentVRotation / (Math.PI / 2f));
-            amount -= (amount >= 0) ? Math.Abs(vamount) : -Math.Abs(vamount);
-            freeCamera.Z2 = freeCamera.Z += vamount + movePos.Z;
-
-            var theta = freeCamera.HRotation + Math.PI;
-            freeCamera.X += amount * (float)Math.Sin(theta) + movePos.Y * (float)Math.Sin(theta + Math.PI / 2f);
-            freeCamera.Y += amount * (float)Math.Cos(theta) + movePos.Y * (float)Math.Cos(theta + Math.PI / 2f);
+            var amount = direction * movePos.X;
+            freeCamera.X += amount.X + movePos.Y * (float)Math.Sin(freeCamera.HRotation - halfPI);
+            freeCamera.Y += amount.Y + movePos.Y * (float)Math.Cos(freeCamera.HRotation - halfPI);
+            freeCamera.Z2 = freeCamera.Z += amount.Z + movePos.Z;
         }
 
         public void Draw()
@@ -325,6 +327,9 @@ namespace Cammy
 
         public void Dispose()
         {
+            if (freeCamera != null)
+                ToggleFreecam();
+
             GetZoomDeltaHook?.Dispose();
         }
     }
