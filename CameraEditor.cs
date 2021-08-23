@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using Dalamud.Hooking;
 using Dalamud.Interface;
+using Dalamud.Plugin;
 using ImGuiNET;
 
 namespace Cammy
@@ -30,6 +31,7 @@ namespace Cammy
 
         public IntPtr cameraManager = IntPtr.Zero;
         public Structures.GameCamera worldCamera;
+        public Structures.GameCamera idleCamera;
         public Structures.GameCamera menuCamera;
         public Structures.GameCamera spectatorCamera;
 
@@ -41,13 +43,17 @@ namespace Cammy
         private readonly Hook<GetZoomDeltaDelegate> GetZoomDeltaHook;
         private float GetZoomDeltaDetour() => zoomDelta;
 
+        private delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
+        private readonly Hook<GetCameraTargetDelegate> GetCameraTargetHook;
+        private IntPtr GetCameraTargetDetour(IntPtr camera) => IntPtr.Zero;
+
         // Of course this isn't though
         private readonly IntPtr foVDeltaPtr;
         private unsafe ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
         public readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
 
-        private CameraPreset Defaults => Cammy.Config.CameraPreset;
+        private static CameraPreset Defaults => Cammy.Config.CameraPreset;
         public bool editorVisible = false;
 
         public unsafe CameraEditor()
@@ -56,13 +62,27 @@ namespace Cammy
             {
                 cameraManager = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
                 worldCamera = new(*(IntPtr*)cameraManager);
-                //unknownCamera = new(*(IntPtr*)(cameraManager + 0x8));
+                idleCamera = new(*(IntPtr*)(cameraManager + 0x8));
                 menuCamera = new(*(IntPtr*)(cameraManager + 0x10));
                 spectatorCamera = new(*(IntPtr*)(cameraManager + 0x18));
 
                 var vtbl = (IntPtr*)*(IntPtr*)worldCamera.Address;
-                GetZoomDeltaHook = new Hook<GetZoomDeltaDelegate>(*(vtbl + 27), new GetZoomDeltaDelegate(GetZoomDeltaDetour)); // Client__Game__Camera_vf27
+                GetZoomDeltaHook = new(*(vtbl + 27), GetZoomDeltaDetour); // Client__Game__Camera_vf27
                 GetZoomDeltaHook.Enable();
+
+                //GetCameraTargetHook = new(*(vtbl + 16), GetCameraTargetDetour); // Client__Game__Camera_vf16
+                //GetCameraTargetHook.Enable();
+
+                //ToggleFreecam();
+
+                unsafe
+                {
+                    //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
+                    //changeCamera(cameraManager, 2, 0);
+
+                    //var changeCamera = (delegate*<IntPtr>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x2D58D0);
+                    //changeCamera();
+                }
 
                 foVDeltaPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
 
@@ -124,34 +144,46 @@ namespace Cammy
         public unsafe void ToggleFreecam()
         {
             var enable = freeCamera == null;
+            var isMainMenu = !Cammy.Interface.ClientState.Condition.Any();
             if (enable)
             {
-                freeCamera = menuCamera;
+                freeCamera = isMainMenu ? menuCamera : worldCamera;
                 *(byte*)(freeCamera.Address + 0x2A0) = 0;
                 freeCamera.MinVRotation = -1.559f;
                 freeCamera.MaxVRotation = 1.559f;
                 freeCamera.CurrentFoV = freeCamera.MinFoV = freeCamera.MaxFoV = 0.78f;
                 freeCamera.CurrentZoom = freeCamera.MinZoom = freeCamera.MaxZoom = freeCamera.AddedFoV = 0;
                 cameraNoCollideReplacer.Enable();
+
+                //if (!isMainMenu)
+                    //GetCameraTargetHook.Enable();
             }
             else
             {
                 freeCamera = null;
                 cameraNoCollideReplacer.Disable();
+                if (!isMainMenu)
+                {
+                    LoadPreset(true);
+                    //GetCameraTargetHook.Disable();
+                }
             }
 
-            static void ToggleAddonVisible(string name)
+            if (isMainMenu)
             {
-                var addon = Cammy.Interface.Framework.Gui.GetUiObjectByName(name, 1);
-                if (addon == IntPtr.Zero) return;
+                static void ToggleAddonVisible(string name)
+                {
+                    var addon = Cammy.Interface.Framework.Gui.GetUiObjectByName(name, 1);
+                    if (addon == IntPtr.Zero) return;
 
-                *(byte*)(addon + Dalamud.Game.Internal.Gui.Structs.AddonOffsets.Flags) ^= 0x20;
+                    *(byte*)(addon + Dalamud.Game.Internal.Gui.Structs.AddonOffsets.Flags) ^= 0x20;
+                }
+
+                ToggleAddonVisible("_TitleRights");
+                ToggleAddonVisible("_TitleRevision");
+                ToggleAddonVisible("_TitleMenu");
+                ToggleAddonVisible("_TitleLogo");
             }
-
-            ToggleAddonVisible("_TitleRights");
-            ToggleAddonVisible("_TitleRevision");
-            ToggleAddonVisible("_TitleMenu");
-            ToggleAddonVisible("_TitleLogo");
         }
 
         public void OnLogin()
@@ -168,7 +200,7 @@ namespace Cammy
 
             var keyState = Cammy.Interface.ClientState.KeyState;
 
-            if (keyState[27] || Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) == IntPtr.Zero) // Esc
+            if (keyState[27] || (!Cammy.Interface.ClientState.Condition.Any() && Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) == IntPtr.Zero)) // Esc
             {
                 ToggleFreecam();
                 return;
@@ -331,6 +363,7 @@ namespace Cammy
                 ToggleFreecam();
 
             GetZoomDeltaHook?.Dispose();
+            GetCameraTargetHook?.Dispose();
         }
     }
 }

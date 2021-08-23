@@ -9,7 +9,7 @@ namespace Cammy
         public int Version { get; set; }
 
         public bool AutoLoadCameraPreset = false;
-        public CameraEditor.CameraPreset CameraPreset = new CameraEditor.CameraPreset();
+        public CameraEditor.CameraPreset CameraPreset = new();
 
         [JsonIgnore] private DalamudPluginInterface pluginInterface;
 

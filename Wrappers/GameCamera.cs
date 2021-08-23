@@ -16,15 +16,15 @@ namespace Cammy.Wrappers
             public delegate*<IntPtr, IntPtr> vf5; // ??? gets something (might need a float array)
             public delegate*<IntPtr, IntPtr> vf6; // ??? get position / rotation? (might need a float array)
             public delegate*<IntPtr, void> vf7; // duplicate of 4
-            public delegate*<IntPtr, void> vf8; // ???
-            public delegate*<void> vf9; // empty function
+            public delegate*<IntPtr, void> vf8; // ??? (runs whenever the camera is swapped to)
+            public delegate*<void> vf9; // empty function (for the world camera anyway) (runs whenever the camera is swapped from)
             public delegate*<void> vf10; // empty function
             public delegate*<IntPtr, IntPtr, bool> vf11; // ??? looks like it returns a bool? (runs whenever the camera gets too close to the character) (compares vf16 return to 2nd argument)
             public delegate*<IntPtr, byte> vf12; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
             public delegate*<IntPtr, IntPtr, IntPtr, IntPtr> vf13; // ??? crashes (might need a float array)
             public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf14; // ??? requires 4 arguments (might need a float array)
             public delegate*<IntPtr, byte> vf15; // ??? returns something
-            public delegate*<IntPtr, IntPtr> vf16; // ??? looks like it does something with targeting
+            public delegate*<IntPtr, IntPtr> vf16; // get camera target
             public delegate*<IntPtr, IntPtr, float> vf17; // ??? crashes
             public delegate*<IntPtr, IntPtr, void> vf18; // ??? requires 2 arguments (might need a float array)
             public delegate*<IntPtr, IntPtr> vf19; // ??? looks like it does something with targeting
