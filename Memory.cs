@@ -27,7 +27,7 @@ namespace Cammy
             public Replacer(string sig, byte[] bytes)
             {
                 var addr = IntPtr.Zero;
-                try { addr = Cammy.Interface.TargetModuleScanner.ScanModule(sig); }
+                try { addr = DalamudApi.SigScanner.ScanModule(sig); }
                 catch { }
                 if (addr == IntPtr.Zero) return;
 
@@ -66,7 +66,7 @@ namespace Cammy
             }
         }
 
-        private static readonly List<Replacer> createdReplacers = new List<Replacer>();
+        private static readonly List<Replacer> createdReplacers = new();
 
         public static void Dispose()
         {

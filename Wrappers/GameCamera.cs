@@ -45,7 +45,7 @@ namespace Cammy.Wrappers
             {
                 foreach (var f in GetType().GetFields())
                 {
-                    var i = ushort.Parse(f.Name.Substring(2));
+                    var i = ushort.Parse(f.Name[2..]);
                     var vfunc = *(address + i);
                     f.SetValue(this, f.FieldType.Cast(vfunc));
                 }

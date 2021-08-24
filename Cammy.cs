@@ -1,77 +1,65 @@
 ﻿using System;
-using System.Reflection;
 using System.Linq.Expressions;
+using Dalamud.Game;
 using Dalamud.Plugin;
-using Cammy.Attributes;
-
-[assembly: AssemblyTitle("Cammy")]
-[assembly: AssemblyVersion("1.1.0.0")]
 
 namespace Cammy
 {
     public class Cammy : IDalamudPlugin
     {
-        public static DalamudPluginInterface Interface { get; private set; }
-        private PluginCommandManager<Cammy> commandManager;
-        public static Configuration Config { get; private set; }
+        public string Name => "Cammy";
         public static Cammy Plugin { get; private set; }
+        public static Configuration Config { get; private set; }
 
         private CameraEditor camEdit;
 
-        public string Name => "Cammy";
-
-        public void Initialize(DalamudPluginInterface p)
+        public Cammy(DalamudPluginInterface pluginInterface)
         {
             Plugin = this;
-            Interface = p;
+            DalamudApi.Initialize(this, pluginInterface);
 
-            Config = (Configuration)Interface.GetPluginConfig() ?? new Configuration();
-            Config.Initialize(Interface);
+            Config = (Configuration)DalamudApi.PluginInterface.GetPluginConfig() ?? new();
+            Config.Initialize();
 
-            Interface.Framework.OnUpdateEvent += Update;
-            Interface.ClientState.OnLogin += OnLogin;
-            Interface.ClientState.OnLogout += OnLogout;
-            Interface.UiBuilder.OnOpenConfigUi += ToggleConfig;
-            Interface.UiBuilder.OnBuildUi += Draw;
-
-            commandManager = new PluginCommandManager<Cammy>(this, Interface);
+            DalamudApi.Framework.Update += Update;
+            DalamudApi.ClientState.Login += Login;
+            DalamudApi.ClientState.Logout += Logout;
+            DalamudApi.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
+            DalamudApi.PluginInterface.UiBuilder.Draw += Draw;
 
             camEdit = new CameraEditor();
         }
 
-        public void ToggleConfig(object sender, EventArgs e) => ToggleConfig();
+        public void ToggleConfig() => camEdit.editorVisible = !camEdit.editorVisible;
 
         [Command("/cammy")]
         [HelpMessage("Opens/closes the config.")]
-        private void ToggleConfig(string command = null, string argument = null) => camEdit.editorVisible = !camEdit.editorVisible;
+        private void ToggleConfig(string command, string argument) => ToggleConfig();
 
-        public static void PrintEcho(string message) => Interface.Framework.Gui.Chat.Print($"[Cammy] {message}");
-        public static void PrintError(string message) => Interface.Framework.Gui.Chat.PrintError($"[Cammy] {message}");
+        public static void PrintEcho(string message) => DalamudApi.ChatGui.Print($"[Cammy] {message}");
+        public static void PrintError(string message) => DalamudApi.ChatGui.PrintError($"[Cammy] {message}");
 
-        private void Update(Dalamud.Game.Internal.Framework framework) => camEdit?.Update();
+        private void Update(Framework framework) => camEdit?.Update();
         private void Draw() => camEdit?.Draw();
-        private void OnLogin(object sender, EventArgs e) => camEdit?.OnLogin();
-        private void OnLogout(object sender, EventArgs e) => camEdit?.OnLogout();
+        private void Login(object sender, EventArgs e) => camEdit?.Login();
+        private void Logout(object sender, EventArgs e) => camEdit?.Logout();
 
         #region IDisposable Support
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
 
-            commandManager.Dispose();
+            Config.Save();
+
+            DalamudApi.Framework.Update -= Update;
+            DalamudApi.ClientState.Login -= Login;
+            DalamudApi.ClientState.Logout -= Logout;
+            DalamudApi.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
+            DalamudApi.PluginInterface.UiBuilder.Draw -= Draw;
+            DalamudApi.Dispose();
 
             camEdit?.Dispose();
             Memory.Dispose();
-
-            Interface.SavePluginConfig(Config);
-
-            Interface.Framework.OnUpdateEvent -= Update;
-            Interface.ClientState.OnLogin -= OnLogin;
-            Interface.ClientState.OnLogout -= OnLogout;
-            Interface.UiBuilder.OnOpenConfigUi -= ToggleConfig;
-            Interface.UiBuilder.OnBuildUi -= Draw;
-
-            Interface.Dispose();
         }
 
         public void Dispose()

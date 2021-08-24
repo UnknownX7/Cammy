@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Dalamud.Hooking;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace Cammy
@@ -60,7 +60,7 @@ namespace Cammy
         {
             try
             {
-                cameraManager = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
+                cameraManager = DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
                 worldCamera = new(*(IntPtr*)cameraManager);
                 idleCamera = new(*(IntPtr*)(cameraManager + 0x8));
                 menuCamera = new(*(IntPtr*)(cameraManager + 0x10));
@@ -84,9 +84,9 @@ namespace Cammy
                     //changeCamera();
                 }
 
-                foVDeltaPtr = Cammy.Interface.TargetModuleScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
+                foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
 
-                if (Cammy.Config.AutoLoadCameraPreset && Cammy.Interface.ClientState.LocalPlayer != null)
+                if (Cammy.Config.AutoLoadCameraPreset && DalamudApi.ClientState.LocalPlayer != null)
                     LoadPreset(true);
             }
             catch { }
@@ -144,7 +144,7 @@ namespace Cammy
         public unsafe void ToggleFreecam()
         {
             var enable = freeCamera == null;
-            var isMainMenu = !Cammy.Interface.ClientState.Condition.Any();
+            var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
                 freeCamera = isMainMenu ? menuCamera : worldCamera;
@@ -173,10 +173,9 @@ namespace Cammy
             {
                 static void ToggleAddonVisible(string name)
                 {
-                    var addon = Cammy.Interface.Framework.Gui.GetUiObjectByName(name, 1);
+                    var addon = DalamudApi.GameGui.GetAddonByName(name, 1);
                     if (addon == IntPtr.Zero) return;
-
-                    *(byte*)(addon + Dalamud.Game.Internal.Gui.Structs.AddonOffsets.Flags) ^= 0x20;
+                    ((AtkUnitBase*)addon)->IsVisible ^= true;
                 }
 
                 ToggleAddonVisible("_TitleRights");
@@ -186,21 +185,21 @@ namespace Cammy
             }
         }
 
-        public void OnLogin()
+        public void Login()
         {
             if (Cammy.Config.AutoLoadCameraPreset)
                 LoadPreset(false);
         }
 
-        public void OnLogout() { }
+        public void Logout() { }
 
         public void Update()
         {
             if (freeCamera == null) return;
 
-            var keyState = Cammy.Interface.ClientState.KeyState;
+            var keyState = DalamudApi.KeyState;
 
-            if (keyState[27] || (!Cammy.Interface.ClientState.Condition.Any() && Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) == IntPtr.Zero)) // Esc
+            if (keyState[27] || (!DalamudApi.Condition.Any() && DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
             {
                 ToggleFreecam();
                 return;
@@ -250,7 +249,7 @@ namespace Cammy
 
         public void Draw()
         {
-            if (freeCamera == null && Cammy.Interface.Framework.Gui.GetUiObjectByName("Title", 1) != IntPtr.Zero)
+            if (freeCamera == null && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
             {
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 var size = new Vector2(50) * ImGuiHelpers.GlobalScale;
