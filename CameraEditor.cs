@@ -45,7 +45,8 @@ namespace Cammy
 
         private delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
         private readonly Hook<GetCameraTargetDelegate> GetCameraTargetHook;
-        private IntPtr GetCameraTargetDetour(IntPtr camera) => IntPtr.Zero;
+        private IntPtr GetCameraTargetDetour(IntPtr camera) => DalamudApi.TargetManager.Target is {} target ? target.Address
+            : DalamudApi.ClientState.LocalPlayer is {} player ? player.Address : IntPtr.Zero;
 
         // Of course this isn't though
         private readonly IntPtr foVDeltaPtr;

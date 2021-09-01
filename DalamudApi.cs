@@ -108,10 +108,6 @@ namespace Cammy
 
         [PluginService]
         //[RequiredVersion("1.0")]
-        public static SeStringManager SeStringManager { get; private set; }
-
-        [PluginService]
-        //[RequiredVersion("1.0")]
         public static SigScanner SigScanner { get; private set; }
 
         [PluginService]
