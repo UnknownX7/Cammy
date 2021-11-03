@@ -218,22 +218,62 @@ namespace Cammy
             ImGui.Spacing();
             ImGui.Spacing();
 
-            var _ = 0;
-            if (ImGui.Combo("Condition Set", ref _, "test1\0test2\0test3"))
-                Cammy.Config.Save();
+            var qolBarEnabled = IPC.QoLBarEnabled;
+            var conditionSets = qolBarEnabled ? IPC.QoLBarConditionSets : Array.Empty<string>();
+            var display = preset.ConditionSet >= 0
+                ? preset.ConditionSet < conditionSets.Length
+                    ? $"[{preset.ConditionSet + 1}] {conditionSets[preset.ConditionSet]}"
+                    : (preset.ConditionSet + 1).ToString()
+                : "None";
+
+            if (ImGui.BeginCombo("Condition Set", display))
+            {
+                if (ImGui.Selectable("None##ConditionSet", preset.ConditionSet < 0))
+                {
+                    preset.ConditionSet = -1;
+                    Cammy.Config.Save();
+                }
+
+                if (qolBarEnabled)
+                {
+                    for (int i = 0; i < conditionSets.Length; i++)
+                    {
+                        var name = conditionSets[i];
+                        if (!ImGui.Selectable($"[{i + 1}] {name}", i == preset.ConditionSet)) continue;
+                        preset.ConditionSet = i;
+                        Cammy.Config.Save();
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Uses a QoL Bar Condition Set to automatically swap to this preset." +
+                    "\nPresets higher in the list will have priority over lower ones." +
+                    "\nCondition Sets should be made using the QoL Bar plugin config." +
+                    "\nPlease see the \"Other Settings\" tab to verify if QoL Bar was detected.");
         }
 
         private static unsafe void DrawOtherSettings()
         {
+            ImGui.TextUnformatted("QoL Bar Status:");
+            if (!IPC.QoLBarEnabled)
             {
-                ImGui.PushFont(UiBuilder.IconFont);
-                if (ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}##Reset???"))
-                    Game.cameraManager->WorldCamera->Mode = 1;
-                ImGui.PopFont();
                 ImGui.SameLine();
-                var _ = Game.cameraManager->WorldCamera->Mode;
-                if (ImGui.SliderInt("???", ref _, 0, 2))
-                    Game.cameraManager->WorldCamera->Mode = _;
+                ImGui.TextColored(new Vector4(1, 0, 0, 1), "Disabled");
+                ImGui.SameLine();
+                ImGui.PushFont(UiBuilder.IconFont);
+                if (ImGui.SmallButton($"{FontAwesomeIcon.UndoAlt.ToIconString()}##CheckQoLBar"))
+                {
+                    IPC.Dispose();
+                    IPC.Initialize();
+                }
+                ImGui.PopFont();
+            }
+            else
+            {
+                ImGui.SameLine();
+                ImGui.TextColored(new Vector4(0, 1, 0, 1), "Enabled");
             }
 
             ImGui.Spacing();
@@ -259,6 +299,18 @@ namespace Cammy
             }
 
             ImGui.Columns(1);
+            ImGui.Spacing();
+
+            {
+                ImGui.PushFont(UiBuilder.IconFont);
+                if (ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}##Reset???"))
+                    Game.cameraManager->WorldCamera->Mode = 1;
+                ImGui.PopFont();
+                ImGui.SameLine();
+                var _ = Game.cameraManager->WorldCamera->Mode;
+                if (ImGui.SliderInt("???", ref _, 0, 2))
+                    Game.cameraManager->WorldCamera->Mode = _;
+            }
         }
 
         private static void DrawFreeCamButton()

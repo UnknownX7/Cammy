@@ -33,6 +33,7 @@ namespace Cammy
                 DalamudApi.ClientState.TerritoryChanged += TerritoryChanged;
 
                 Game.Initialize();
+                IPC.Initialize();
 
                 pluginReady = true;
             }
@@ -42,6 +43,7 @@ namespace Cammy
         public void ToggleConfig() => PluginUI.isVisible ^= true;
 
         private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide ]";
+
         [Command("/cammy")]
         [HelpMessage("Opens / closes the config. Additional usage: " + cammySubcommands)]
         private unsafe void ToggleConfig(string command, string argument)
@@ -168,6 +170,8 @@ namespace Cammy
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
+
+            IPC.Dispose();
 
             Config.Save();
             new CameraConfigPreset().Apply();

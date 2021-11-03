@@ -32,7 +32,7 @@ namespace Cammy
         public float CenterHeightOffset = 0f;
         public int ConditionSet = -1;
 
-        public bool CheckConditionSet() => true;
+        public bool CheckConditionSet() => ConditionSet < 0 || IPC.QoLBarEnabled && IPC.CheckConditionSet(ConditionSet);
 
         public unsafe void Apply()
         {
