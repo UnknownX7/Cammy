@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using Dalamud.Interface;
-using Dalamud.Logging;
 using ImGuiNET;
 
 namespace Cammy
@@ -15,6 +14,9 @@ namespace Cammy
 
         public static void Draw()
         {
+            if (!Game.IsFreeCamEnabled && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
+                DrawFreeCamButton();
+
             if (!isVisible) return;
 
             ImGui.SetNextWindowSizeConstraints(new Vector2(700, 600) * ImGuiHelpers.GlobalScale, new Vector2(9999));
@@ -239,6 +241,20 @@ namespace Cammy
                 if (ImGui.Checkbox("Disable Camera Collision", ref _))
                     Game.cameraNoCollideReplacer.Toggle();
             }
+        }
+
+        private static void DrawFreeCamButton()
+        {
+            ImGuiHelpers.ForceNextWindowMainViewport();
+            var size = new Vector2(50) * ImGuiHelpers.GlobalScale;
+            ImGui.SetNextWindowSize(size, ImGuiCond.Always);
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(ImGuiHelpers.MainViewport.Size.X - size.X, 0), ImGuiCond.Always);
+            ImGui.Begin("FreeCam Button", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing);
+
+            if (ImGui.IsWindowHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+                Game.ToggleFreeCam();
+
+            ImGui.End();
         }
     }
 }

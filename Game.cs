@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Numerics;
 using Cammy.Structures;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
-using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace Cammy
 {
     public static unsafe class Game
     {
         public static CameraManager* cameraManager;
+        public static GameCamera* freeCam;
+        public static bool IsFreeCamEnabled => freeCam != null;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
         public static float zoomDelta = 0.75f;
@@ -63,62 +67,61 @@ namespace Cammy
 
             if (isChangingAreas && !DalamudApi.Condition[ConditionFlag.BetweenAreas] && --changingAreaDelay == 0)
                 isChangingAreas = false;
+
+            if (IsFreeCamEnabled)
+                UpdateFreeCam();
         }
 
-        /*
-        public unsafe void ToggleFreecam()
+        public static void ToggleFreeCam()
         {
-            var enable = freeCamera == null;
+            var enable = !IsFreeCamEnabled;
             var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
-                freeCamera = isMainMenu ? menuCamera : worldCamera;
-                *(byte*)(freeCamera.Address + 0x2A0) = 0;
-                freeCamera.MinVRotation = -1.559f;
-                freeCamera.MaxVRotation = 1.559f;
-                freeCamera.CurrentFoV = freeCamera.MinFoV = freeCamera.MaxFoV = 0.78f;
-                freeCamera.CurrentZoom = freeCamera.MinZoom = freeCamera.MaxZoom = freeCamera.AddedFoV = 0;
+                freeCam = isMainMenu ? cameraManager->MenuCamera : cameraManager->WorldCamera;
+                *(byte*)((IntPtr)freeCam + 0x2A0) = 0;
+                freeCam->MinVRotation = -1.559f;
+                freeCam->MaxVRotation = 1.559f;
+                freeCam->CurrentFoV = freeCam->MinFoV = freeCam->MaxFoV = 0.78f;
+                freeCam->CurrentZoom = freeCam->MinZoom = freeCam->MaxZoom = freeCam->AddedFoV = 0;
                 cameraNoCollideReplacer.Enable();
 
                 //if (!isMainMenu)
-                    //GetCameraTargetHook.Enable();
+                //GetCameraTargetHook.Enable();
             }
             else
             {
-                freeCamera = null;
+                freeCam = null;
                 cameraNoCollideReplacer.Disable();
                 if (!isMainMenu)
                 {
-                    LoadPreset(true);
+                    PresetManager.DisableCameraPresets();
                     //GetCameraTargetHook.Disable();
                 }
             }
 
-            if (isMainMenu)
-            {
-                static void ToggleAddonVisible(string name)
-                {
-                    var addon = DalamudApi.GameGui.GetAddonByName(name, 1);
-                    if (addon == IntPtr.Zero) return;
-                    ((AtkUnitBase*)addon)->IsVisible ^= true;
-                }
+            if (!isMainMenu) return;
 
-                ToggleAddonVisible("_TitleRights");
-                ToggleAddonVisible("_TitleRevision");
-                ToggleAddonVisible("_TitleMenu");
-                ToggleAddonVisible("_TitleLogo");
+            static void ToggleAddonVisible(string name)
+            {
+                var addon = DalamudApi.GameGui.GetAddonByName(name, 1);
+                if (addon == IntPtr.Zero) return;
+                ((AtkUnitBase*)addon)->IsVisible ^= true;
             }
+
+            ToggleAddonVisible("_TitleRights");
+            ToggleAddonVisible("_TitleRevision");
+            ToggleAddonVisible("_TitleMenu");
+            ToggleAddonVisible("_TitleLogo");
         }
 
-        public void Update()
+        public static void UpdateFreeCam()
         {
-            if (freeCamera == null) return;
-
             var keyState = DalamudApi.KeyState;
 
             if (keyState[27] || (!DalamudApi.Condition.Any() && DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
             {
-                ToggleFreecam();
+                ToggleFreeCam();
                 return;
             }
 
@@ -141,10 +144,10 @@ namespace Cammy
 
             if (keyState[67]) // C
             {
-                freeCamera.X = 0;
-                freeCamera.Y = 0;
-                freeCamera.Z = 0;
-                freeCamera.Z2 = 0;
+                freeCam->X = 0;
+                freeCam->Y = 0;
+                freeCam->Z = 0;
+                freeCam->Z2 = 0;
             }
 
             if (movePos == Vector3.Zero) return;
@@ -154,33 +157,15 @@ namespace Cammy
             if (ImGui.GetIO().KeyShift)
                 movePos *= 10;
             const double halfPI = Math.PI / 2f;
-            var hAngle = freeCamera.HRotation + halfPI;
-            var vAngle = freeCamera.CurrentVRotation;
+            var hAngle = freeCam->HRotation + halfPI;
+            var vAngle = freeCam->CurrentVRotation;
             var direction = new Vector3((float)(Math.Cos(hAngle) * Math.Cos(vAngle)), -(float)(Math.Sin(hAngle) * Math.Cos(vAngle)), (float)Math.Sin(vAngle));
 
             var amount = direction * movePos.X;
-            freeCamera.X += amount.X + movePos.Y * (float)Math.Sin(freeCamera.HRotation - halfPI);
-            freeCamera.Y += amount.Y + movePos.Y * (float)Math.Cos(freeCamera.HRotation - halfPI);
-            freeCamera.Z2 = freeCamera.Z += amount.Z + movePos.Z;
+            freeCam->X += amount.X + movePos.Y * (float)Math.Sin(freeCam->HRotation - halfPI);
+            freeCam->Y += amount.Y + movePos.Y * (float)Math.Cos(freeCam->HRotation - halfPI);
+            freeCam->Z2 = freeCam->Z += amount.Z + movePos.Z;
         }
-
-        public void Draw()
-        {
-            if (freeCamera == null && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
-            {
-                ImGuiHelpers.ForceNextWindowMainViewport();
-                var size = new Vector2(50) * ImGuiHelpers.GlobalScale;
-                ImGui.SetNextWindowSize(size, ImGuiCond.Always);
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(ImGuiHelpers.MainViewport.Size.X - size.X, 0), ImGuiCond.Always);
-                ImGui.Begin("Freecam Button", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing);
-
-                if (ImGui.IsWindowHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
-                    ToggleFreecam();
-
-                ImGui.End();
-            }
-        }
-         */
 
         public static void Dispose()
         {

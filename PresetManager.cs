@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Dalamud.Logging;
 
 namespace Cammy
 {
@@ -31,7 +30,7 @@ namespace Cammy
 
         public static void Update()
         {
-            if (!Game.isLoggedIn || Game.isChangingAreas) return;
+            if (!Game.isLoggedIn || Game.isChangingAreas || Game.IsFreeCamEnabled) return;
 
             if (presetOverride != null)
             {
