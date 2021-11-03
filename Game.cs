@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Cammy.Structures;
 using Dalamud.Game.ClientState.Conditions;
@@ -37,6 +37,15 @@ namespace Cammy
             return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
         }
 
+        public static float cameraHeightOffset = 0;
+        private delegate void GetCameraPositionDelegate(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson);
+        private static Hook<GetCameraPositionDelegate> GetCameraPositionHook;
+        private static void GetCameraPositionDetour(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson)
+        {
+            GetCameraPositionHook.Original(camera, target, vectorPosition, swapPerson);
+            vectorPosition[1] += cameraHeightOffset;
+        }
+
         public static readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
 
         public static bool isLoggedIn = false;
@@ -49,8 +58,10 @@ namespace Cammy
             cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
 
             var vtbl = cameraManager->WorldCamera->VTable;
+            GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
             GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
             GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
+            GetCameraPositionHook.Enable();
             GetZoomDeltaHook.Enable();
 
             //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
@@ -174,11 +185,12 @@ namespace Cammy
 
         public static void Dispose()
         {
-            //if (freeCamera != null)
-            //    ToggleFreecam();
+            if (IsFreeCamEnabled)
+                ToggleFreeCam();
 
-            GetZoomDeltaHook?.Dispose();
+            GetCameraPositionHook?.Dispose();
             GetCameraTargetHook?.Dispose();
+            GetZoomDeltaHook?.Dispose();
         }
     }
 }

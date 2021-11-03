@@ -23,7 +23,7 @@ namespace Cammy.Structures
         [FieldOffset(0x14C)] public float MaxVRotation; // 0.785398 (pi/4)
         [FieldOffset(0x160)] public float Tilt;
         [FieldOffset(0x170)] public int Mode; // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
-        [FieldOffset(0x218)] public float CenterHeightOffset;
+        [FieldOffset(0x218)] public float LookAtHeightOffset; // No idea what to call this
         [FieldOffset(0x2B4)] public float Z2;
     }
 
@@ -43,8 +43,8 @@ namespace Cammy.Structures
         public delegate*<void> vf10; // empty function
         public delegate*<IntPtr, IntPtr, bool> vf11; // ??? looks like it returns a bool? (runs whenever the camera gets too close to the character) (compares vf16 return to 2nd argument)
         public delegate*<IntPtr, byte> vf12; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
-        public delegate*<IntPtr, IntPtr, IntPtr, IntPtr> vf13; // ??? crashes (might need a float array)
-        public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf14; // ??? requires 4 arguments (might need a float array)
+        public delegate*<IntPtr, IntPtr, IntPtr, IntPtr> vf13; // applies center height offset (might need a float array)
+        public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf14; // set position (requires 4 arguments, might need a float array)
         public delegate*<IntPtr, byte> vf15; // ??? returns something
         public delegate*<IntPtr, IntPtr> vf16; // get camera target
         public delegate*<IntPtr, IntPtr, float> vf17; // ??? crashes
