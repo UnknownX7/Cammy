@@ -1,10 +1,12 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Cammy.Structures
 {
     [StructLayout(LayoutKind.Explicit)]
-    public struct GameCamera
+    public unsafe struct GameCamera
     {
+        [FieldOffset(0x0)] public IntPtr* VTable;
         [FieldOffset(0x90)] public float X;
         [FieldOffset(0x94)] public float Z;
         [FieldOffset(0x98)] public float Y;

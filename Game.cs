@@ -24,11 +24,18 @@ namespace Cammy
         private static IntPtr foVDeltaPtr;
         public static ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
-        private delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
-        private static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
-        private static IntPtr GetCameraTargetDetour(IntPtr camera) => DalamudApi.TargetManager.FocusTarget is { } target
-            ? target.Address
-            : DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
+        public delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
+        public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
+        private static IntPtr GetCameraTargetDetour(IntPtr camera)
+        {
+            if (DalamudApi.TargetManager.FocusTarget is { } focus)
+                return focus.Address;
+
+            if (DalamudApi.TargetManager.SoftTarget is { } soft)
+                return soft.Address;
+
+            return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
+        }
 
         public static readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
 
@@ -41,12 +48,10 @@ namespace Cammy
         {
             cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
 
-            var vtbl = (IntPtr*)*(IntPtr*)cameraManager->WorldCamera;
-            GetZoomDeltaHook = new(*(vtbl + 27), GetZoomDeltaDetour); // Client__Game__Camera_vf27
+            var vtbl = cameraManager->WorldCamera->VTable;
+            GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
+            GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
             GetZoomDeltaHook.Enable();
-
-            //GetCameraTargetHook = new(*(vtbl + 16), GetCameraTargetDetour); // Client__Game__Camera_vf16
-            //GetCameraTargetHook.Enable();
 
             //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
             //changeCamera(cameraManager, 2, 0);

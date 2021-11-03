@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using Dalamud.Game;
 using Dalamud.Logging;
 using Dalamud.Plugin;
@@ -40,31 +41,98 @@ namespace Cammy
 
         public void ToggleConfig() => PluginUI.isVisible ^= true;
 
+        private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide ]";
         [Command("/cammy")]
-        [HelpMessage("Opens/closes the config.")]
-        private void ToggleConfig(string command, string argument) => ToggleConfig();
-
-        [Command("/cammypreset")]
-        [HelpMessage("Applies a preset to override automatic presets, specified by name. Use without a name to disable.")]
-        private void OnCammyPreset(string command, string argument)
+        [HelpMessage("Opens / closes the config. Additional usage: " + cammySubcommands)]
+        private unsafe void ToggleConfig(string command, string argument)
         {
             if (string.IsNullOrEmpty(argument))
             {
-                PresetManager.SetPresetOverride(null);
-                PrintEcho("Removed preset override.");
+                ToggleConfig();
                 return;
             }
 
-            var preset = Config.Presets.FirstOrDefault(preset => preset.Name == argument);
+            var regex = Regex.Match(argument, "^(\\w+) ?(.*)");
+            var subcommand = regex.Success && regex.Groups.Count > 1 ? regex.Groups[1].Value : string.Empty;
 
-            if (preset == null)
+            switch (subcommand.ToLower())
             {
-                PrintError($"Failed to find preset \"{argument}\"");
-                return;
-            }
+                case "preset":
+                {
+                    if (regex.Groups.Count < 2 || string.IsNullOrEmpty(regex.Groups[2].Value))
+                    {
+                        PresetManager.SetPresetOverride(null);
+                        PrintEcho("Removed preset override.");
+                        return;
+                    }
 
-            PresetManager.SetPresetOverride(preset);
-            PrintEcho($"Preset set to \"{argument}\"");
+                    var arg = regex.Groups[2].Value;
+                    var preset = Config.Presets.FirstOrDefault(preset => preset.Name == arg);
+
+                    if (preset == null)
+                    {
+                        PrintError($"Failed to find preset \"{arg}\"");
+                        return;
+                    }
+
+                    PresetManager.SetPresetOverride(preset);
+                    PrintEcho($"Preset set to \"{arg}\"");
+                    break;
+                }
+                case "zoom":
+                {
+                    if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
+                    {
+                        PrintError("Invalid amount.");
+                        return;
+                    }
+
+                    Game.cameraManager->WorldCamera->CurrentZoom = amount;
+                    break;
+                }
+                case "fov":
+                {
+                    if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
+                    {
+                        PrintError("Invalid amount.");
+                        return;
+                    }
+
+                    Game.cameraManager->WorldCamera->CurrentFoV = amount;
+                    break;
+                }
+                case "spectate":
+                {
+                    if (!Game.GetCameraTargetHook.IsEnabled)
+                        Game.GetCameraTargetHook.Enable();
+                    else
+                        Game.GetCameraTargetHook.Disable();
+
+                    PrintEcho($"Spectating is now {(Game.GetCameraTargetHook.IsEnabled ? "enabled" : "disabled")}!");
+                    break;
+                }
+                case "nocollide":
+                {
+                    Game.cameraNoCollideReplacer.Toggle();
+                    PrintEcho($"Camera collision is now {(Game.cameraNoCollideReplacer.IsEnabled ? "disabled" : "enabled")}!");
+                    break;
+                }
+                case "help":
+                {
+                    PrintEcho("Subcommands:" +
+                        "\npreset <name> - Applies a preset to override automatic presets, specified by name. Use without a name to disable." +
+                        "\nzoom <amount> - Sets the current zoom level." +
+                        "\nfov <amount> - Sets the current FoV level." +
+                        "\nspectate - Toggles the \"Spectate Focus / Soft Target\" option." +
+                        "\nnocollide - Toggles the \"Disable Camera Collision\" option.");
+                    break;
+                }
+                default:
+                {
+                    PrintError("Invalid usage: " + cammySubcommands);
+                    break;
+                }
+            }
         }
 
         public static void PrintEcho(string message) => DalamudApi.ChatGui.Print($"[Cammy] {message}");

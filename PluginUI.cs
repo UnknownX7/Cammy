@@ -226,21 +226,39 @@ namespace Cammy
         private static unsafe void DrawOtherSettings()
         {
             {
-                if (ImGui.Button("Reset##???"))
+                ImGui.PushFont(UiBuilder.IconFont);
+                if (ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}##Reset???"))
                     Game.cameraManager->WorldCamera->Mode = 1;
+                ImGui.PopFont();
                 ImGui.SameLine();
                 var _ = Game.cameraManager->WorldCamera->Mode;
                 if (ImGui.SliderInt("???", ref _, 0, 2))
                     Game.cameraManager->WorldCamera->Mode = _;
             }
 
+            ImGui.Spacing();
+            ImGui.Columns(2, null, false);
+
+            {
+                var _ = Game.GetCameraTargetHook.IsEnabled;
+                if (ImGui.Checkbox("Spectate Focus / Soft Target", ref _))
+                {
+                    if (_)
+                        Game.GetCameraTargetHook.Enable();
+                    else
+                        Game.GetCameraTargetHook.Disable();
+                }
+            }
+
             if (Game.cameraNoCollideReplacer.IsValid)
             {
-                ImGui.Spacing();
+                ImGui.NextColumn();
                 var _ = Game.cameraNoCollideReplacer.IsEnabled;
                 if (ImGui.Checkbox("Disable Camera Collision", ref _))
                     Game.cameraNoCollideReplacer.Toggle();
             }
+
+            ImGui.Columns(1);
         }
 
         private static void DrawFreeCamButton()
