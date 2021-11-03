@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud;
+using Dalamud.Logging;
 
 namespace Cammy
 {
@@ -13,8 +15,9 @@ namespace Cammy
             private readonly byte[] oldBytes;
             public bool IsEnabled { get; private set; } = false;
             public bool IsValid => Address != IntPtr.Zero;
+            public string ReadBytes => !IsValid ? string.Empty : oldBytes.Aggregate(string.Empty, (current, b) => current + (b.ToString("X2") + " "));
 
-            public Replacer(IntPtr addr, byte[] bytes)
+            public Replacer(IntPtr addr, byte[] bytes, bool startEnabled = false)
             {
                 if (addr == IntPtr.Zero) return;
 
@@ -22,19 +25,25 @@ namespace Cammy
                 newBytes = bytes;
                 SafeMemory.ReadBytes(addr, bytes.Length, out oldBytes);
                 createdReplacers.Add(this);
+
+                if (startEnabled)
+                    Enable();
             }
 
-            public Replacer(string sig, byte[] bytes)
+            public Replacer(string sig, byte[] bytes, bool startEnabled = false)
             {
                 var addr = IntPtr.Zero;
                 try { addr = DalamudApi.SigScanner.ScanModule(sig); }
-                catch { }
+                catch { PluginLog.LogError($"Failed to find signature {sig}"); }
                 if (addr == IntPtr.Zero) return;
 
                 Address = addr;
                 newBytes = bytes;
                 SafeMemory.ReadBytes(addr, bytes.Length, out oldBytes);
                 createdReplacers.Add(this);
+
+                if (startEnabled)
+                    Enable();
             }
 
             public void Enable()

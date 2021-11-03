@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using Dalamud.Game;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 
 namespace Cammy
@@ -11,54 +13,104 @@ namespace Cammy
         public static Cammy Plugin { get; private set; }
         public static Configuration Config { get; private set; }
 
-        private CameraEditor camEdit;
+        private readonly bool pluginReady = false;
 
         public Cammy(DalamudPluginInterface pluginInterface)
         {
-            Plugin = this;
-            DalamudApi.Initialize(this, pluginInterface);
+            try
+            {
+                Plugin = this;
+                DalamudApi.Initialize(this, pluginInterface);
 
-            Config = (Configuration)DalamudApi.PluginInterface.GetPluginConfig() ?? new();
-            Config.Initialize();
+                Config = (Configuration)DalamudApi.PluginInterface.GetPluginConfig() ?? new();
+                Config.Initialize();
 
-            DalamudApi.Framework.Update += Update;
-            DalamudApi.ClientState.Login += Login;
-            DalamudApi.ClientState.Logout += Logout;
-            DalamudApi.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
-            DalamudApi.PluginInterface.UiBuilder.Draw += Draw;
+                DalamudApi.Framework.Update += Update;
+                DalamudApi.ClientState.Logout += Logout;
+                DalamudApi.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
+                DalamudApi.PluginInterface.UiBuilder.Draw += Draw;
+                DalamudApi.ClientState.TerritoryChanged += TerritoryChanged;
 
-            camEdit = new CameraEditor();
+                Game.Initialize();
+
+                pluginReady = true;
+            }
+            catch (Exception e) { PluginLog.LogError($"Failed loading plugin\n{e}"); }
         }
 
-        public void ToggleConfig() => camEdit.editorVisible = !camEdit.editorVisible;
+        public void ToggleConfig() => PluginUI.isVisible ^= true;
 
         [Command("/cammy")]
         [HelpMessage("Opens/closes the config.")]
         private void ToggleConfig(string command, string argument) => ToggleConfig();
 
+        [Command("/cammypreset")]
+        [HelpMessage("Applies a preset to override automatic presets, specified by name. Use without a name to disable.")]
+        private void OnCammyPreset(string command, string argument)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                PresetManager.SetPresetOverride(null);
+                PrintEcho("Removed preset override.");
+                return;
+            }
+
+            var preset = Config.Presets.FirstOrDefault(preset => preset.Name == argument);
+
+            if (preset == null)
+            {
+                PrintError($"Failed to find preset \"{argument}\"");
+                return;
+            }
+
+            PresetManager.SetPresetOverride(preset);
+            PrintEcho($"Preset set to \"{argument}\"");
+        }
+
         public static void PrintEcho(string message) => DalamudApi.ChatGui.Print($"[Cammy] {message}");
         public static void PrintError(string message) => DalamudApi.ChatGui.PrintError($"[Cammy] {message}");
 
-        private void Update(Framework framework) => camEdit?.Update();
-        private void Draw() => camEdit?.Draw();
-        private void Login(object sender, EventArgs e) => camEdit?.Login();
-        private void Logout(object sender, EventArgs e) => camEdit?.Logout();
+        private void Update(Framework framework)
+        {
+            if (!pluginReady) return;
+            Game.Update();
+            PresetManager.Update();
+        }
 
+        private void Draw()
+        {
+            if (!pluginReady) return;
+            PluginUI.Draw();
+        }
+
+        private void Logout(object sender, EventArgs e)
+        {
+            if (!pluginReady) return;
+            Game.isLoggedIn = false;
+            PresetManager.DisableCameraPresets();
+        }
+        private void TerritoryChanged(object sender, ushort id)
+        {
+            if (!pluginReady) return;
+            Game.isChangingAreas = true;
+            Game.changingAreaDelay = 1;
+            PresetManager.DisableCameraPresets();
+        }
         #region IDisposable Support
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
 
             Config.Save();
+            new CameraConfigPreset().Apply();
 
             DalamudApi.Framework.Update -= Update;
-            DalamudApi.ClientState.Login -= Login;
             DalamudApi.ClientState.Logout -= Logout;
             DalamudApi.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
             DalamudApi.PluginInterface.UiBuilder.Draw -= Draw;
             DalamudApi.Dispose();
 
-            camEdit?.Dispose();
+            Game.Dispose();
             Memory.Dispose();
         }
 
