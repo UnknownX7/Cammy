@@ -163,6 +163,27 @@ namespace Cammy
                 CurrentPreset.Apply();
         }
 
+        private static void ResetSliderFloat(string id, ref float val, float min, float max, Func<float> reset, string format)
+        {
+            var save = false;
+
+            ImGui.PushFont(UiBuilder.IconFont);
+            if (ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}##{id}"))
+            {
+                val = reset();
+                save = true;
+            }
+            ImGui.PopFont();
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 150 * ImGuiHelpers.GlobalScale);
+            save |= ImGui.SliderFloat(id, ref val, min, max, format);
+
+            if (!save) return;
+            Cammy.Config.Save();
+            if (CurrentPreset == PresetManager.activePreset)
+                CurrentPreset.Apply();
+        }
+
         private static void DrawPresetEditor(CameraConfigPreset preset)
         {
             if (ImGui.InputText("Name", ref preset.Name, 64))
@@ -187,19 +208,19 @@ namespace Cammy
             ImGui.Spacing();
 
             if (preset.UseStartZoom)
-                ResetSliderFloat("Starting Zoom", ref preset.StartZoom, preset.MinZoom, preset.MaxZoom, 6f, "%.2f");
-            ResetSliderFloat("Minimum Zoom", ref preset.MinZoom, 1f, preset.MaxZoom, 1.5f, "%.2f");
-            ResetSliderFloat("Maximum Zoom", ref preset.MaxZoom, preset.MinZoom, 100f, 20f, "%.2f");
-            ResetSliderFloat("Zoom Delta", ref preset.ZoomDelta, 0, 5f, 0.75f, "%.2f");
+                ResetSliderFloat("Starting Zoom", ref preset.StartZoom, preset.MinZoom, preset.MaxZoom, 6, "%.2f");
+            ResetSliderFloat("Minimum Zoom", ref preset.MinZoom, 1, preset.MaxZoom, 1.5f, "%.2f");
+            ResetSliderFloat("Maximum Zoom", ref preset.MaxZoom, preset.MinZoom, 100, 20, "%.2f");
+            ResetSliderFloat("Zoom Delta", ref preset.ZoomDelta, 0, 5, 0.75f, "%.2f");
 
             ImGui.Spacing();
 
             if (preset.UseStartFoV)
                 ResetSliderFloat("Starting FoV", ref preset.StartFoV, preset.MinFoV, preset.MaxFoV, 0.78f, "%f");
             ResetSliderFloat("Minimum FoV", ref preset.MinFoV, 0.01f, preset.MaxFoV, 0.69f, "%f");
-            ResetSliderFloat("Maximum FoV", ref preset.MaxFoV, preset.MinFoV, 3f, 0.78f, "%f");
+            ResetSliderFloat("Maximum FoV", ref preset.MaxFoV, preset.MinFoV, 3, 0.78f, "%f");
             ResetSliderFloat("FoV Delta", ref preset.FoVDelta, 0, 0.5f, 0.08726646751f, "%f");
-            ResetSliderFloat("Added FoV", ref preset.AddedFoV, -1.56f, 2f, 0f, "%f"); // Slightly useless but that's ok
+            ResetSliderFloat("Added FoV", ref preset.AddedFoV, -1.56f, 2, 0, "%f"); // Slightly useless but that's ok
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("In some weather, the FoV will cause lag or crash if the total is 3.14.");
 
@@ -210,9 +231,9 @@ namespace Cammy
 
             ImGui.Spacing();
 
-            ResetSliderFloat("Camera Height Offset", ref preset.HeightOffset, -1, 1, 0f, "%.2f");
-            ResetSliderFloat("Tilt", ref preset.Tilt, (float)-Math.PI, (float)Math.PI, 0f, "%f");
-            ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10f, 10f, 0f, "%f");
+            ResetSliderFloat("Camera Height Offset", ref preset.HeightOffset, -1, 1, 0, "%.2f");
+            ResetSliderFloat("Tilt", ref preset.Tilt, (float)-Math.PI, (float)Math.PI, 0, "%f");
+            ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, Game.GetDefaultLookAtHeightOffset, "%f");
 
             ImGui.Spacing();
             ImGui.Spacing();

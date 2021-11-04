@@ -12,6 +12,7 @@ namespace Cammy
     {
         public static CameraManager* cameraManager;
         public static GameCamera* freeCam;
+        public static float? cachedDefaultLookAtHeight = null;
         public static bool IsFreeCamEnabled => freeCam != null;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
@@ -53,39 +54,25 @@ namespace Cammy
         public static int changingAreaDelay = 0;
         public static bool isChangingAreas = false;
 
-        public static void Initialize()
+        // Very optimized very good
+        public static float GetDefaultLookAtHeightOffset()
         {
-            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
+            if (cachedDefaultLookAtHeight.HasValue)
+                return cachedDefaultLookAtHeight.Value;
 
-            var vtbl = cameraManager->WorldCamera->VTable;
-            GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
-            GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
-            GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
-            GetCameraPositionHook.Enable();
-            GetZoomDeltaHook.Enable();
+            if (cameraManager == null) return 0;
 
-            //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
-            //changeCamera(cameraManager, 2, 0);
+            var worldCamera = cameraManager->WorldCamera;
 
-            //var changeCamera = (delegate*<IntPtr>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x2D58D0);
-            //changeCamera();
+            if (worldCamera == null) return 0;
 
-            foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
-        }
-
-        public static void Update()
-        {
-            if (onLogin)
-                onLogin = false;
-
-            if (!isLoggedIn)
-                onLogin = isLoggedIn = DalamudApi.ClientState.IsLoggedIn && !DalamudApi.Condition[ConditionFlag.BetweenAreas];
-
-            if (isChangingAreas && !DalamudApi.Condition[ConditionFlag.BetweenAreas] && --changingAreaDelay == 0)
-                isChangingAreas = false;
-
-            if (IsFreeCamEnabled)
-                UpdateFreeCam();
+            var prev = worldCamera->LookAtHeightOffset;
+            worldCamera->ResetLookatHeightOffset = 1;
+            ((delegate* unmanaged<GameCamera*, void>)worldCamera->VTable[2])(worldCamera);
+            var ret = worldCamera->LookAtHeightOffset;
+            worldCamera->LookAtHeightOffset = prev;
+            cachedDefaultLookAtHeight = ret;
+            return ret;
         }
 
         public static void ToggleFreeCam()
@@ -129,6 +116,41 @@ namespace Cammy
             ToggleAddonVisible("_TitleRevision");
             ToggleAddonVisible("_TitleMenu");
             ToggleAddonVisible("_TitleLogo");
+        }
+
+        public static void Initialize()
+        {
+            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
+
+            var vtbl = cameraManager->WorldCamera->VTable;
+            GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
+            GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
+            GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
+            GetCameraPositionHook.Enable();
+            GetZoomDeltaHook.Enable();
+
+            //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
+            //changeCamera(cameraManager, 2, 0);
+
+            //var changeCamera = (delegate*<IntPtr>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x2D58D0);
+            //changeCamera();
+
+            foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
+        }
+
+        public static void Update()
+        {
+            if (onLogin)
+                onLogin = false;
+
+            if (!isLoggedIn)
+                onLogin = isLoggedIn = DalamudApi.ClientState.IsLoggedIn && !DalamudApi.Condition[ConditionFlag.BetweenAreas];
+
+            if (isChangingAreas && !DalamudApi.Condition[ConditionFlag.BetweenAreas] && --changingAreaDelay == 0)
+                isChangingAreas = false;
+
+            if (IsFreeCamEnabled)
+                UpdateFreeCam();
         }
 
         public static void UpdateFreeCam()

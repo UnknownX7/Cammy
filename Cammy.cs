@@ -27,6 +27,7 @@ namespace Cammy
                 Config.Initialize();
 
                 DalamudApi.Framework.Update += Update;
+                DalamudApi.ClientState.Login += Login;
                 DalamudApi.ClientState.Logout += Logout;
                 DalamudApi.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
                 DalamudApi.PluginInterface.UiBuilder.Draw += Draw;
@@ -153,12 +154,20 @@ namespace Cammy
             PluginUI.Draw();
         }
 
+        private void Login(object sender, EventArgs e)
+        {
+            if (!pluginReady) return;
+            Game.cachedDefaultLookAtHeight = null;
+        }
+
         private void Logout(object sender, EventArgs e)
         {
             if (!pluginReady) return;
+            Game.cachedDefaultLookAtHeight = null;
             Game.isLoggedIn = false;
             PresetManager.DisableCameraPresets();
         }
+
         private void TerritoryChanged(object sender, ushort id)
         {
             if (!pluginReady) return;
@@ -177,6 +186,7 @@ namespace Cammy
             new CameraConfigPreset().Apply();
 
             DalamudApi.Framework.Update -= Update;
+            DalamudApi.ClientState.Login -= Login;
             DalamudApi.ClientState.Logout -= Logout;
             DalamudApi.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
             DalamudApi.PluginInterface.UiBuilder.Draw -= Draw;
