@@ -33,6 +33,8 @@ namespace Cammy
         public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset();
         public int ConditionSet = -1;
 
+        public CameraConfigPreset Clone() => (CameraConfigPreset)MemberwiseClone();
+
         public bool CheckConditionSet() => ConditionSet < 0 || IPC.QoLBarEnabled && IPC.CheckConditionSet(ConditionSet);
 
         public unsafe void Apply()

@@ -57,9 +57,17 @@ namespace Cammy
 
             ImGui.SameLine();
 
+            if (ImGui.Button(FontAwesomeIcon.Copyright.ToIconString()) && hasSelectedPreset)
+            {
+                Cammy.Config.Presets.Add(CurrentPreset.Clone());
+                Cammy.Config.Save();
+            }
+
+            ImGui.SameLine();
+
             if (ImGui.Button(FontAwesomeIcon.ArrowCircleUp.ToIconString()) && hasSelectedPreset)
             {
-                var preset = Cammy.Config.Presets[selectedPreset];
+                var preset = CurrentPreset;
                 Cammy.Config.Presets.RemoveAt(selectedPreset);
 
                 selectedPreset = Math.Max(selectedPreset - 1, 0);
@@ -72,7 +80,7 @@ namespace Cammy
 
             if (ImGui.Button(FontAwesomeIcon.ArrowCircleDown.ToIconString()) && hasSelectedPreset)
             {
-                var preset = Cammy.Config.Presets[selectedPreset];
+                var preset = CurrentPreset;
                 Cammy.Config.Presets.RemoveAt(selectedPreset);
 
                 selectedPreset = Math.Min(selectedPreset + 1, Cammy.Config.Presets.Count);
