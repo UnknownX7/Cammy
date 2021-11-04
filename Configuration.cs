@@ -45,12 +45,16 @@ namespace Cammy
 
             if (UseStartZoom && (!UseStartOnLogin || Game.onLogin))
                 camera->CurrentZoom = StartZoom;
+            else
+                camera->CurrentZoom = Math.Min(Math.Max(camera->CurrentZoom, MinZoom), MaxZoom);
             camera->MinZoom = MinZoom;
             camera->MaxZoom = MaxZoom;
             Game.zoomDelta = ZoomDelta;
 
             if (UseStartFoV && (!UseStartOnLogin || Game.onLogin))
                 camera->CurrentFoV = StartFoV;
+            else
+                camera->CurrentFoV = Math.Min(Math.Max(camera->CurrentFoV, MinFoV), MaxFoV);
             camera->MinFoV = MinFoV;
             camera->MaxFoV = MaxFoV;
             Game.FoVDelta = FoVDelta;
