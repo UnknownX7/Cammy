@@ -305,7 +305,7 @@ namespace Cammy
             }
 
             ImGui.Spacing();
-            ImGui.Columns(2, null, false);
+            ImGui.Columns(3, null, false);
 
             {
                 var _ = Game.GetCameraTargetHook.IsEnabled;
@@ -316,6 +316,13 @@ namespace Cammy
                     else
                         Game.GetCameraTargetHook.Disable();
                 }
+            }
+
+            {
+                ImGui.NextColumn();
+                var _ = Game.IsFreeCamEnabled;
+                if (ImGui.Checkbox("Free Cam", ref _))
+                    Game.ToggleFreeCam();
             }
 
             if (Game.cameraNoCollideReplacer.IsValid)

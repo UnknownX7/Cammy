@@ -14,6 +14,7 @@ namespace Cammy
         public static GameCamera* freeCam;
         public static float? cachedDefaultLookAtHeight = null;
         public static bool IsFreeCamEnabled => freeCam != null;
+        private static Vector3 freeCamPositionOffset;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
         public static float zoomDelta = 0.75f;
@@ -44,8 +45,20 @@ namespace Cammy
         private static void GetCameraPositionDetour(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson)
         {
             GetCameraPositionHook.Original(camera, target, vectorPosition, swapPerson);
-            vectorPosition[1] += cameraHeightOffset;
+            if (!IsFreeCamEnabled)
+            {
+                vectorPosition[1] += cameraHeightOffset;
+            }
+            else
+            {
+                vectorPosition[0] += freeCamPositionOffset.X;
+                vectorPosition[1] += freeCamPositionOffset.Z;
+                vectorPosition[2] += freeCamPositionOffset.Y;
+            }
         }
+
+        public static IntPtr forceDisableMovementPtr;
+        public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
         public static readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
 
@@ -81,16 +94,22 @@ namespace Cammy
             var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
+                freeCamPositionOffset = new();
                 freeCam = isMainMenu ? cameraManager->MenuCamera : cameraManager->WorldCamera;
-                *(byte*)((IntPtr)freeCam + 0x2A0) = 0;
+                if (isMainMenu)
+                    *(byte*)((IntPtr)freeCam + 0x2A0) = 0;
                 freeCam->MinVRotation = -1.559f;
                 freeCam->MaxVRotation = 1.559f;
                 freeCam->CurrentFoV = freeCam->MinFoV = freeCam->MaxFoV = 0.78f;
-                freeCam->CurrentZoom = freeCam->MinZoom = freeCam->MaxZoom = freeCam->AddedFoV = 0;
+                freeCam->CurrentZoom = freeCam->MinZoom = freeCam->MaxZoom = 0.1f;
+                freeCam->AddedFoV = 0;
                 cameraNoCollideReplacer.Enable();
 
-                //if (!isMainMenu)
-                //GetCameraTargetHook.Enable();
+                if (!isMainMenu)
+                {
+                    ForceDisableMovement++;
+                    Cammy.PrintEcho("Controls: WASD - Move, Space - Up, Shift (Hold) - Speed up, C - Reset, Esc - Stop Free Cam");
+                }
             }
             else
             {
@@ -98,8 +117,10 @@ namespace Cammy
                 cameraNoCollideReplacer.Disable();
                 if (!isMainMenu)
                 {
+                    if (ForceDisableMovement > 0)
+                        ForceDisableMovement--;
+                    new CameraConfigPreset().Apply();
                     PresetManager.DisableCameraPresets();
-                    //GetCameraTargetHook.Disable();
                 }
             }
 
@@ -129,13 +150,8 @@ namespace Cammy
             GetCameraPositionHook.Enable();
             GetZoomDeltaHook.Enable();
 
-            //var changeCamera = (delegate*<IntPtr, int, byte, void>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x1132E70);
-            //changeCamera(cameraManager, 2, 0);
-
-            //var changeCamera = (delegate*<IntPtr>)(Cammy.Interface.TargetModuleScanner.Module.BaseAddress + 0x2D58D0);
-            //changeCamera();
-
             foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
+            forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("48 83 EC 28 83 3D ?? ?? ?? ?? ?? 0F 87") + 1; // Why is this 1 off? (Also found at g_PlayerMoveController + 0x51C)
         }
 
         public static void Update()
@@ -157,8 +173,10 @@ namespace Cammy
         {
             var keyState = DalamudApi.KeyState;
 
-            if (keyState[27] || (!DalamudApi.Condition.Any() && DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
+            var loggedIn = DalamudApi.ClientState.IsLoggedIn;
+            if (keyState[27] || !loggedIn && DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero || ForceDisableMovement == 0) // Esc
             {
+                DalamudApi.KeyState[27] = false;
                 ToggleFreeCam();
                 return;
             }
@@ -182,15 +200,23 @@ namespace Cammy
 
             if (keyState[67]) // C
             {
-                freeCam->X = 0;
-                freeCam->Y = 0;
-                freeCam->Z = 0;
-                freeCam->Z2 = 0;
+                DalamudApi.KeyState[67] = false;
+                if (loggedIn)
+                {
+                    freeCamPositionOffset = new();
+                }
+                else
+                {
+                    freeCam->X = 0;
+                    freeCam->Y = 0;
+                    freeCam->Z = 0;
+                    freeCam->Z2 = 0;
+                }
             }
 
             if (movePos == Vector3.Zero) return;
 
-            movePos *= ImGui.GetIO().DeltaTime * 20;
+            movePos *= (float)(DalamudApi.Framework.UpdateDelta.TotalSeconds * 20);
 
             if (ImGui.GetIO().KeyShift)
                 movePos *= 10;
@@ -200,9 +226,22 @@ namespace Cammy
             var direction = new Vector3((float)(Math.Cos(hAngle) * Math.Cos(vAngle)), -(float)(Math.Sin(hAngle) * Math.Cos(vAngle)), (float)Math.Sin(vAngle));
 
             var amount = direction * movePos.X;
-            freeCam->X += amount.X + movePos.Y * (float)Math.Sin(freeCam->HRotation - halfPI);
-            freeCam->Y += amount.Y + movePos.Y * (float)Math.Cos(freeCam->HRotation - halfPI);
-            freeCam->Z2 = freeCam->Z += amount.Z + movePos.Z;
+            var x = amount.X + movePos.Y * (float)Math.Sin(freeCam->HRotation - halfPI);
+            var y = amount.Y + movePos.Y * (float)Math.Cos(freeCam->HRotation - halfPI);
+            var z = amount.Z + movePos.Z;
+
+            if (loggedIn)
+            {
+                freeCamPositionOffset.X += x;
+                freeCamPositionOffset.Y += y;
+                freeCamPositionOffset.Z += z;
+            }
+            else
+            {
+                freeCam->X += x;
+                freeCam->Y += y;
+                freeCam->Z2 = freeCam->Z += z;
+            }
         }
 
         public static void Dispose()

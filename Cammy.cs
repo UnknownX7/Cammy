@@ -43,7 +43,7 @@ namespace Cammy
 
         public void ToggleConfig() => PluginUI.isVisible ^= true;
 
-        private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide ]";
+        private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide | freecam ]";
 
         [Command("/cammy")]
         [HelpMessage("Opens / closes the config. Additional usage: " + cammySubcommands)]
@@ -120,6 +120,11 @@ namespace Cammy
                     PrintEcho($"Camera collision is now {(Game.cameraNoCollideReplacer.IsEnabled ? "disabled" : "enabled")}!");
                     break;
                 }
+                case "freecam":
+                {
+                    Game.ToggleFreeCam();
+                    break;
+                }
                 case "help":
                 {
                     PrintEcho("Subcommands:" +
@@ -127,7 +132,8 @@ namespace Cammy
                         "\nzoom <amount> - Sets the current zoom level." +
                         "\nfov <amount> - Sets the current FoV level." +
                         "\nspectate - Toggles the \"Spectate Focus / Soft Target\" option." +
-                        "\nnocollide - Toggles the \"Disable Camera Collision\" option.");
+                        "\nnocollide - Toggles the \"Disable Camera Collision\" option." +
+                        "\nfreecam - Toggles the \"Free Cam\" option.");
                     break;
                 }
                 default:
