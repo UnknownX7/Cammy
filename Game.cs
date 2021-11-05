@@ -174,7 +174,7 @@ namespace Cammy
             var keyState = DalamudApi.KeyState;
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
-            if (keyState[27] || !loggedIn && DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero || ForceDisableMovement == 0) // Esc
+            if (keyState[27] || (loggedIn ? ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
             {
                 DalamudApi.KeyState[27] = false;
                 ToggleFreeCam();
