@@ -52,9 +52,9 @@ namespace Cammy
             }
             else
             {
-                vectorPosition[0] += freeCamPositionOffset.X;
-                vectorPosition[1] += freeCamPositionOffset.Z;
-                vectorPosition[2] += freeCamPositionOffset.Y;
+                vectorPosition[0] = freeCamPositionOffset.X;
+                vectorPosition[1] = freeCamPositionOffset.Z;
+                vectorPosition[2] = freeCamPositionOffset.Y;
             }
         }
 
@@ -104,7 +104,7 @@ namespace Cammy
             var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
-                freeCamPositionOffset = new();
+                freeCamPositionOffset = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
                 freeCam = isMainMenu ? cameraManager->MenuCamera : cameraManager->WorldCamera;
                 if (isMainMenu)
                     *(byte*)((IntPtr)freeCam + 0x2A0) = 0;
@@ -235,7 +235,7 @@ namespace Cammy
                 DalamudApi.KeyState[67] = false;
                 if (loggedIn)
                 {
-                    freeCamPositionOffset = new();
+                    freeCamPositionOffset = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
                 }
                 else
                 {
