@@ -17,12 +17,14 @@ namespace Cammy.Structures
         [FieldOffset(0x124)] public float MinFoV; // 0.69
         [FieldOffset(0x128)] public float MaxFoV; // 0.78
         [FieldOffset(0x12C)] public float AddedFoV; // 0
-        [FieldOffset(0x130)] public float HRotation; // -pi -> pi, default is pi
+        [FieldOffset(0x130)] public float CurrentHRotation; // -pi -> pi, default is pi
         [FieldOffset(0x134)] public float CurrentVRotation; // -0.349066
+        //[FieldOffset(0x138)] public float HRotationDelta;
         [FieldOffset(0x148)] public float MinVRotation; // -1.483530, should be -+pi/2 for straight down/up but camera breaks so use -+1.569
         [FieldOffset(0x14C)] public float MaxVRotation; // 0.785398 (pi/4)
         [FieldOffset(0x160)] public float Tilt;
         [FieldOffset(0x170)] public int Mode; // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
+        //[FieldOffset(0x174)] public int ControlType; // 0 first person, 1 legacy, 2 standard, 3/5/6 ???, 4 ???
         [FieldOffset(0x218)] public float LookAtHeightOffset; // No idea what to call this
         [FieldOffset(0x21C)] public byte ResetLookatHeightOffset; // No idea what to call this
         [FieldOffset(0x2B4)] public float Z2;
@@ -46,7 +48,7 @@ namespace Cammy.Structures
         public delegate*<IntPtr, byte> vf12; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
         public delegate*<IntPtr, IntPtr, IntPtr, IntPtr> vf13; // applies center height offset (might need a float array)
         public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf14; // set position (requires 4 arguments, might need a float array)
-        public delegate*<IntPtr, byte> vf15; // ??? returns something
+        public delegate*<IntPtr, byte> vf15; // get control type? returns 1 for legacy, 2 for standard (this value is applied to 0x174)
         public delegate*<IntPtr, IntPtr> vf16; // get camera target
         public delegate*<IntPtr, IntPtr, float> vf17; // ??? crashes
         public delegate*<IntPtr, IntPtr, void> vf18; // ??? requires 2 arguments (might need a float array)

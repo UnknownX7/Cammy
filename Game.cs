@@ -27,27 +27,14 @@ namespace Cammy
         private static IntPtr foVDeltaPtr;
         public static ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
-        public delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
-        public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
-        private static IntPtr GetCameraTargetDetour(IntPtr camera)
-        {
-            if (DalamudApi.TargetManager.FocusTarget is { } focus)
-                return focus.Address;
-
-            if (DalamudApi.TargetManager.SoftTarget is { } soft)
-                return soft.Address;
-
-            return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
-        }
-
         public static float cameraHeightOffset = 0;
         private delegate void GetCameraPositionDelegate(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson);
         private static Hook<GetCameraPositionDelegate> GetCameraPositionHook;
         private static void GetCameraPositionDetour(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson)
         {
-            GetCameraPositionHook.Original(camera, target, vectorPosition, swapPerson);
             if (!IsFreeCamEnabled)
             {
+                GetCameraPositionHook.Original(camera, target, vectorPosition, swapPerson);
                 vectorPosition[1] += cameraHeightOffset;
             }
             else
@@ -57,6 +44,31 @@ namespace Cammy
                 vectorPosition[2] = freeCamPositionOffset.Y;
             }
         }
+
+        public static bool IsSpectating { get; private set; } = false;
+        public delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
+        public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
+        private static IntPtr GetCameraTargetDetour(IntPtr camera)
+        {
+            if (DalamudApi.TargetManager.FocusTarget is { } focus)
+            {
+                IsSpectating = true;
+                return focus.Address;
+            }
+
+            if (DalamudApi.TargetManager.SoftTarget is { } soft)
+            {
+                IsSpectating = true;
+                return soft.Address;
+            }
+
+            IsSpectating = false;
+            return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
+        }
+
+        private delegate byte GetCameraAutoRotateModeDelegate(IntPtr camera, IntPtr framework);
+        private static Hook<GetCameraAutoRotateModeDelegate> GetCameraAutoRotateModeHook;
+        private static byte GetCameraAutoRotateModeDetour(IntPtr camera, IntPtr framework) => (byte)(IsFreeCamEnabled || IsSpectating ? 4 : GetCameraAutoRotateModeHook.Original(camera, framework));
 
         private static IntPtr inputData;
         private static delegate* unmanaged<Framework*, IntPtr> getInputData;
@@ -128,6 +140,7 @@ namespace Cammy
             {
                 freeCam = null;
                 cameraNoCollideReplacer.Disable();
+
                 if (!isMainMenu)
                 {
                     if (ForceDisableMovement > 0)
@@ -160,8 +173,10 @@ namespace Cammy
             GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
             GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
             GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
+            GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
             GetCameraPositionHook.Enable();
             GetZoomDeltaHook.Enable();
+            GetCameraAutoRotateModeHook.Enable();
 
             foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
             forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("48 83 EC 28 83 3D ?? ?? ?? ?? ?? 0F 87") + 1; // Why is this 1 off? (Also found at g_PlayerMoveController + 0x51C)
@@ -256,13 +271,13 @@ namespace Cammy
             if (ImGui.GetIO().KeyShift)
                 movePos *= 10;
             const double halfPI = Math.PI / 2f;
-            var hAngle = freeCam->HRotation + halfPI;
+            var hAngle = freeCam->CurrentHRotation + halfPI;
             var vAngle = freeCam->CurrentVRotation;
             var direction = new Vector3((float)(Math.Cos(hAngle) * Math.Cos(vAngle)), -(float)(Math.Sin(hAngle) * Math.Cos(vAngle)), (float)Math.Sin(vAngle));
 
             var amount = direction * movePos.X;
-            var x = amount.X + movePos.Y * (float)Math.Sin(freeCam->HRotation - halfPI);
-            var y = amount.Y + movePos.Y * (float)Math.Cos(freeCam->HRotation - halfPI);
+            var x = amount.X + movePos.Y * (float)Math.Sin(freeCam->CurrentHRotation - halfPI);
+            var y = amount.Y + movePos.Y * (float)Math.Cos(freeCam->CurrentHRotation - halfPI);
             var z = amount.Z + movePos.Z;
 
             if (loggedIn)
@@ -285,6 +300,7 @@ namespace Cammy
                 ToggleFreeCam();
 
             GetCameraPositionHook?.Dispose();
+            GetCameraAutoRotateModeHook?.Dispose();
             GetCameraTargetHook?.Dispose();
             GetZoomDeltaHook?.Dispose();
         }
