@@ -3,6 +3,7 @@ using System.Numerics;
 using Cammy.Structures;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -57,6 +58,15 @@ namespace Cammy
             }
         }
 
+        private static IntPtr inputData;
+        private static delegate* unmanaged<Framework*, IntPtr> getInputData;
+
+        private static delegate* unmanaged<IntPtr, int, byte> isInputIDHeld;
+        public static bool IsInputIDHeld(int i) => isInputIDHeld(inputData, i) != 0;
+
+        //private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
+        //public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
+
         public static IntPtr forceDisableMovementPtr;
         public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
@@ -108,7 +118,7 @@ namespace Cammy
                 if (!isMainMenu)
                 {
                     ForceDisableMovement++;
-                    Cammy.PrintEcho("Controls: WASD - Move, Space - Up, Shift (Hold) - Speed up, C - Reset, Esc - Stop Free Cam");
+                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, C - Reset, Esc - Stop Free Cam");
                 }
             }
             else
@@ -152,10 +162,21 @@ namespace Cammy
 
             foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
             forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("48 83 EC 28 83 3D ?? ?? ?? ?? ?? 0F 87") + 1; // Why is this 1 off? (Also found at g_PlayerMoveController + 0x51C)
+
+            getInputData = (delegate* unmanaged<Framework*, IntPtr>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
+            isInputIDHeld = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
+            //isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
+            inputData = getInputData(Framework.Instance());
         }
 
         public static void Update()
         {
+            //for (int i = 0; i < 2000; i++)
+            //{
+            //    if (isInputIDPressed(inputData, i) > 0)
+            //        PluginLog.Error($"{i}");
+            //}
+
             if (onLogin)
                 onLogin = false;
 
@@ -174,6 +195,8 @@ namespace Cammy
             var keyState = DalamudApi.KeyState;
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
+
+            // IsInputIDHeld(3) // Cant block Esc from the game when doing this
             if (keyState[27] || (loggedIn ? ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
             {
                 DalamudApi.KeyState[27] = false;
@@ -183,20 +206,29 @@ namespace Cammy
 
             var movePos = Vector3.Zero;
 
-            if (keyState[87]) // W
+            //if (keyState[87]) // W
+            if (IsInputIDHeld(321) || IsInputIDHeld(36) && IsInputIDHeld(37)) // Move Forward / Left + Right Click
                 movePos.X += 1;
 
-            if (keyState[65]) // A
+            //if (keyState[65]) // A
+            if (IsInputIDHeld(323) || IsInputIDHeld(325)) // Move / Strafe Left
                 movePos.Y += 1;
 
-            if (keyState[83]) // S
+            //if (keyState[83]) // S
+            if (IsInputIDHeld(322)) // Move Back
                 movePos.X += -1;
 
-            if (keyState[68]) // D
+            //if (keyState[68]) // D
+            if (IsInputIDHeld(324) || IsInputIDHeld(326)) // Move / Strafe Right
                 movePos.Y += -1;
 
-            if (keyState[32]) // Space
+            //if (keyState[32]) // Space
+            if (IsInputIDHeld(348) || IsInputIDHeld(444)) // Jump / Ascend
                 movePos.Z += 1;
+
+            //if (keyState[32] && ImGui.GetIO().KeyCtrl) // Ctrl + Space
+            if (IsInputIDHeld(443)) // Descent
+                movePos.Z -= 1;
 
             if (keyState[67]) // C
             {
