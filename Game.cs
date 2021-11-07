@@ -111,8 +111,11 @@ namespace Cammy
                 freeCam->MinVRotation = -1.559f;
                 freeCam->MaxVRotation = 1.559f;
                 freeCam->CurrentFoV = freeCam->MinFoV = freeCam->MaxFoV = 0.78f;
-                freeCam->CurrentZoom = freeCam->MinZoom = freeCam->MaxZoom = 0.1f;
+                freeCam->MinZoom = 0;
+                freeCam->CurrentZoom = freeCam->MaxZoom = 0.1f;
+                zoomDelta = 0;
                 freeCam->AddedFoV = freeCam->LookAtHeightOffset = 0;
+                freeCam->Mode = 1;
                 cameraNoCollideReplacer.Enable();
 
                 if (!isMainMenu)
