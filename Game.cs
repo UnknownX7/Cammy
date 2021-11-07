@@ -76,8 +76,8 @@ namespace Cammy
         private static delegate* unmanaged<IntPtr, int, byte> isInputIDHeld;
         public static bool IsInputIDHeld(int i) => isInputIDHeld(inputData, i) != 0;
 
-        //private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
-        //public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
+        private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
+        public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
 
         public static IntPtr forceDisableMovementPtr;
         public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
@@ -133,7 +133,7 @@ namespace Cammy
                 if (!isMainMenu)
                 {
                     ForceDisableMovement++;
-                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, C - Reset, Esc - Stop Free Cam");
+                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, C - Reset, Cycle through Enemies (Nearest to Farthest) - Stop Free Cam");
                 }
             }
             else
@@ -183,7 +183,7 @@ namespace Cammy
 
             getInputData = (delegate* unmanaged<Framework*, IntPtr>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
             isInputIDHeld = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
-            //isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
+            isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
             inputData = getInputData(Framework.Instance());
         }
 
@@ -191,8 +191,8 @@ namespace Cammy
         {
             //for (int i = 0; i < 2000; i++)
             //{
-            //    if (isInputIDPressed(inputData, i) > 0)
-            //        PluginLog.Error($"{i}");
+            //    if (isInputIDHeld(inputData, i) > 0)
+            //        Dalamud.Logging.PluginLog.Error($"{i}");
             //}
 
             if (onLogin)
@@ -214,10 +214,8 @@ namespace Cammy
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-            // IsInputIDHeld(3) // Cant block Esc from the game when doing this
-            if (keyState[27] || (loggedIn ? ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Esc
+            if (IsInputIDPressed(366) || (loggedIn ? ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Nearest to Farthest)
             {
-                DalamudApi.KeyState[27] = false;
                 ToggleFreeCam();
                 return;
             }
