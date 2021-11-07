@@ -310,12 +310,7 @@ namespace Cammy
             {
                 var _ = Game.GetCameraTargetHook.IsEnabled;
                 if (ImGui.Checkbox("Spectate Focus / Soft Target", ref _))
-                {
-                    if (_)
-                        Game.GetCameraTargetHook.Enable();
-                    else
-                        Game.GetCameraTargetHook.Disable();
-                }
+                    Game.ToggleSpectate();
             }
 
             {

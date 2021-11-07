@@ -106,11 +106,7 @@ namespace Cammy
                 }
                 case "spectate":
                 {
-                    if (!Game.GetCameraTargetHook.IsEnabled)
-                        Game.GetCameraTargetHook.Enable();
-                    else
-                        Game.GetCameraTargetHook.Disable();
-
+                    Game.ToggleSpectate();
                     PrintEcho($"Spectating is now {(Game.GetCameraTargetHook.IsEnabled ? "enabled" : "disabled")}!");
                     break;
                 }

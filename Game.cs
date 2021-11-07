@@ -110,6 +110,19 @@ namespace Cammy
             return ret;
         }
 
+        public static void ToggleSpectate()
+        {
+            if (!GetCameraTargetHook.IsEnabled)
+            {
+                GetCameraTargetHook.Enable();
+            }
+            else
+            {
+                GetCameraTargetHook.Disable();
+                IsSpectating = false;
+            }
+        }
+
         public static void ToggleFreeCam()
         {
             var enable = !IsFreeCamEnabled;
