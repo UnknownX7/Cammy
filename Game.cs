@@ -16,6 +16,7 @@ namespace Cammy
         public static float? cachedDefaultLookAtHeight = null;
         public static bool IsFreeCamEnabled => freeCam != null;
         private static Vector3 freeCamPositionOffset;
+        private static float freeCamSpeed = 1;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
         public static float zoomDelta = 0.75f;
@@ -79,6 +80,9 @@ namespace Cammy
         private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
         public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
 
+        private static delegate* unmanaged<sbyte> getMouseWheelStatus;
+        public static sbyte GetMouseWheelStatus() => getMouseWheelStatus();
+
         public static IntPtr forceDisableMovementPtr;
         public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
@@ -130,6 +134,7 @@ namespace Cammy
             if (enable)
             {
                 freeCamPositionOffset = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
+                freeCamSpeed = 1;
                 freeCam = isMainMenu ? cameraManager->MenuCamera : cameraManager->WorldCamera;
                 if (isMainMenu)
                     *(byte*)((IntPtr)freeCam + 0x2A0) = 0;
@@ -146,7 +151,7 @@ namespace Cammy
                 if (!isMainMenu)
                 {
                     ForceDisableMovement++;
-                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, C - Reset, Cycle through Enemies (Nearest to Farthest) - Stop Free Cam");
+                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, Zoom - Change Speed, C - Reset, Cycle through Enemies (Nearest to Farthest) - Stop Free Cam");
                 }
             }
             else
@@ -197,6 +202,7 @@ namespace Cammy
             getInputData = (delegate* unmanaged<Framework*, IntPtr>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
             isInputIDHeld = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
             isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
+            getMouseWheelStatus = (delegate* unmanaged<sbyte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? F7 D8 48 8B CB");
             inputData = getInputData(Framework.Instance());
         }
 
@@ -262,6 +268,8 @@ namespace Cammy
             if (keyState[67]) // C
             {
                 DalamudApi.KeyState[67] = false;
+                freeCamSpeed = 1;
+
                 if (loggedIn)
                 {
                     freeCamPositionOffset = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
@@ -275,9 +283,13 @@ namespace Cammy
                 }
             }
 
+            var mouseWheelStatus = GetMouseWheelStatus();
+            if (mouseWheelStatus != 0)
+                freeCamSpeed *= 1 + 0.2f * mouseWheelStatus;
+
             if (movePos == Vector3.Zero) return;
 
-            movePos *= (float)(DalamudApi.Framework.UpdateDelta.TotalSeconds * 20);
+            movePos *= (float)(DalamudApi.Framework.UpdateDelta.TotalSeconds * 20) * freeCamSpeed;
 
             if (ImGui.GetIO().KeyShift)
                 movePos *= 10;
