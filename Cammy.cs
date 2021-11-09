@@ -118,7 +118,7 @@ namespace Cammy
                 }
                 case "freecam":
                 {
-                    Game.ToggleFreeCam();
+                    FreeCam.Toggle();
                     break;
                 }
                 case "help":
@@ -147,6 +147,7 @@ namespace Cammy
         {
             if (!pluginReady) return;
             Game.Update();
+            FreeCam.Update();
             PresetManager.Update();
         }
 
@@ -193,6 +194,9 @@ namespace Cammy
             DalamudApi.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
             DalamudApi.PluginInterface.UiBuilder.Draw -= Draw;
             DalamudApi.Dispose();
+
+            if (FreeCam.Enabled)
+                FreeCam.Toggle();
 
             Game.Dispose();
             Memory.Dispose();

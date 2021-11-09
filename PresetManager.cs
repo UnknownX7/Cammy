@@ -30,7 +30,7 @@ namespace Cammy
 
         public static void Update()
         {
-            if (!Game.isLoggedIn || Game.isChangingAreas || Game.IsFreeCamEnabled) return;
+            if (!Game.isLoggedIn || Game.isChangingAreas || FreeCam.Enabled) return;
 
             if (presetOverride != null)
             {

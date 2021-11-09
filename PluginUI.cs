@@ -14,7 +14,7 @@ namespace Cammy
 
         public static void Draw()
         {
-            if (!Game.IsFreeCamEnabled && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
+            if (!FreeCam.Enabled && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
                 DrawFreeCamButton();
 
             if (!isVisible) return;
@@ -315,9 +315,9 @@ namespace Cammy
 
             {
                 ImGui.NextColumn();
-                var _ = Game.IsFreeCamEnabled;
+                var _ = FreeCam.Enabled;
                 if (ImGui.Checkbox("Free Cam", ref _))
-                    Game.ToggleFreeCam();
+                    FreeCam.Toggle();
             }
 
             if (Game.cameraNoCollideReplacer.IsValid)
@@ -352,7 +352,7 @@ namespace Cammy
             ImGui.Begin("FreeCam Button", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
-                Game.ToggleFreeCam();
+                FreeCam.Toggle();
 
             ImGui.End();
         }
