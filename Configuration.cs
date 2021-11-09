@@ -103,6 +103,7 @@ namespace Cammy
 
         [Obsolete] public CameraEditor.CameraPreset CameraPreset { internal get; set; }
         public List<CameraConfigPreset> Presets = new();
+        public bool FreeCamOnDeath = false;
 
         public void Initialize()
         {

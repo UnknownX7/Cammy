@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Cammy.Structures;
+using Dalamud.Game.ClientState.Conditions;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -14,8 +15,9 @@ namespace Cammy
         private static bool locked = false;
         private static float speed = 1;
         public static Vector3 position;
+        private static bool onDeath = false;
 
-        public static void Toggle()
+        public static void Toggle(bool death = false)
         {
             var enable = !Enabled;
             var isMainMenu = !DalamudApi.Condition.Any();
@@ -24,6 +26,8 @@ namespace Cammy
                 locked = false;
                 speed = 1;
                 position = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
+                onDeath = death;
+
                 gameCamera = isMainMenu ? Game.cameraManager->MenuCamera : Game.cameraManager->WorldCamera;
                 if (isMainMenu)
                     *(byte*)((IntPtr)gameCamera + 0x2A0) = 0;
@@ -82,6 +86,9 @@ namespace Cammy
 
         public static void Update()
         {
+            if (!Enabled && Cammy.Config.FreeCamOnDeath && DalamudApi.Condition[ConditionFlag.Unconscious] || Enabled && onDeath && !DalamudApi.Condition[ConditionFlag.Unconscious])
+                Toggle(true);
+
             if (!Enabled) return;
 
             if (Game.IsInputIDPressed(366)) // Cycle through Enemies (Nearest to Farthest)

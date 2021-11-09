@@ -320,6 +320,10 @@ namespace Cammy
                     FreeCam.Toggle();
             }
 
+            ImGui.NextColumn();
+            if (ImGui.Checkbox("Toggle Free Cam on Death/Revive", ref Cammy.Config.FreeCamOnDeath))
+                Cammy.Config.Save();
+
             if (Game.cameraNoCollideReplacer.IsValid)
             {
                 ImGui.NextColumn();
