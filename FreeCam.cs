@@ -11,6 +11,7 @@ namespace Cammy
         private static GameCamera* gameCamera;
         public static bool Enabled => gameCamera != null;
 
+        private static bool locked = false;
         private static float speed = 1;
         public static Vector3 position;
 
@@ -20,8 +21,9 @@ namespace Cammy
             var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
-                position = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
+                locked = false;
                 speed = 1;
+                position = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
                 gameCamera = isMainMenu ? Game.cameraManager->MenuCamera : Game.cameraManager->WorldCamera;
                 if (isMainMenu)
                     *(byte*)((IntPtr)gameCamera + 0x2A0) = 0;
@@ -38,7 +40,15 @@ namespace Cammy
                 if (!isMainMenu)
                 {
                     Game.ForceDisableMovement++;
-                    Cammy.PrintEcho("Controls: Move Keybinds - Move, Jump / Ascend - Up, Descend - Down, Shift (Hold) - Speed up, Zoom - Change Speed, C - Reset, Cycle through Enemies (Nearest to Farthest) - Stop Free Cam");
+                    Cammy.PrintEcho("Additional Controls:" +
+                        //"\nMove Keybinds - Move," +
+                        //"\nJump / Ascend - Up," +
+                        //"\nDescend - Down," +
+                        "\nShift (Hold) - Speed up" +
+                        "\nZoom - Change Speed" +
+                        "\nC - Reset" +
+                        "\nCycle through Enemies (Nearest to Farthest) - Lock" +
+                        "\nCycle through Enemies (Farthest to Nearest) - Stop");
                 }
             }
             else
@@ -48,7 +58,7 @@ namespace Cammy
 
                 if (!isMainMenu)
                 {
-                    if (Game.ForceDisableMovement > 0)
+                    if (!locked && Game.ForceDisableMovement > 0)
                         Game.ForceDisableMovement--;
                     new CameraConfigPreset().Apply();
                     PresetManager.DisableCameraPresets();
@@ -74,43 +84,46 @@ namespace Cammy
         {
             if (!Enabled) return;
 
-            var keyState = DalamudApi.KeyState;
+            if (Game.IsInputIDPressed(366)) // Cycle through Enemies (Nearest to Farthest)
+            {
+                locked ^= true;
+                if (locked && Game.ForceDisableMovement > 0)
+                    Game.ForceDisableMovement--;
+                else
+                    Game.ForceDisableMovement++;
+            }
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-            if (Game.IsInputIDPressed(366) || (loggedIn ? Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Nearest to Farthest)
+            if (Game.IsInputIDPressed(367) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Farthest to Nearest)
             {
                 Toggle();
                 return;
             }
 
+            if (locked) return;
+
             var movePos = Vector3.Zero;
 
-            //if (keyState[87]) // W
             if (Game.IsInputIDHeld(321) || Game.IsInputIDHeld(36) && Game.IsInputIDHeld(37)) // Move Forward / Left + Right Click
                 movePos.X += 1;
 
-            //if (keyState[65]) // A
             if (Game.IsInputIDHeld(323) || Game.IsInputIDHeld(325)) // Move / Strafe Left
                 movePos.Y += 1;
 
-            //if (keyState[83]) // S
             if (Game.IsInputIDHeld(322)) // Move Back
                 movePos.X += -1;
 
-            //if (keyState[68]) // D
             if (Game.IsInputIDHeld(324) || Game.IsInputIDHeld(326)) // Move / Strafe Right
                 movePos.Y += -1;
 
-            //if (keyState[32]) // Space
             if (Game.IsInputIDHeld(348) || Game.IsInputIDHeld(444)) // Jump / Ascend
                 movePos.Z += 1;
 
-            //if (keyState[32] && ImGui.GetIO().KeyCtrl) // Ctrl + Space
             if (Game.IsInputIDHeld(443)) // Descent
                 movePos.Z -= 1;
 
-            if (keyState[67]) // C
+            if (DalamudApi.KeyState[67]) // C
             {
                 DalamudApi.KeyState[67] = false;
                 speed = 1;
