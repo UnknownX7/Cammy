@@ -60,10 +60,7 @@ namespace Cammy
             camera->MinFoV = MinFoV;
             camera->MaxFoV = MaxFoV;
             Game.FoVDelta = FoVDelta;
-            camera->AddedFoV = AddedFoV;
 
-            //if (!init)
-            //    CurrentVRotation = preset.CurrentVRotation;
             camera->MinVRotation = MinVRotation;
             camera->MaxVRotation = MaxVRotation;
 

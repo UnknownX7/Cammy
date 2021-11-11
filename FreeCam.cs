@@ -36,7 +36,7 @@ namespace Cammy
                 gameCamera->CurrentFoV = gameCamera->MinFoV = gameCamera->MaxFoV = 0.78f;
                 gameCamera->CurrentZoom = gameCamera->MinZoom = gameCamera->MaxZoom = 0.1f;
                 Game.zoomDelta = 0;
-                gameCamera->AddedFoV = gameCamera->LookAtHeightOffset = 0;
+                gameCamera->LookAtHeightOffset = 0;
                 gameCamera->Mode = 1;
                 Game.cameraNoCollideReplacer.Enable();
 
