@@ -61,6 +61,11 @@ namespace Cammy
             return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
         }
 
+        private delegate byte CanChangePerspectiveDelegate();
+        private static Hook<CanChangePerspectiveDelegate> CanChangePerspectiveHook;
+        private static byte CanChangePerspectiveDetour() => (byte)(FreeCam.Enabled ? 0 : 1);
+
+
         private delegate byte GetCameraAutoRotateModeDelegate(IntPtr camera, IntPtr framework);
         private static Hook<GetCameraAutoRotateModeDelegate> GetCameraAutoRotateModeHook;
         private static byte GetCameraAutoRotateModeDetour(IntPtr camera, IntPtr framework) => (byte)(FreeCam.Enabled || IsSpectating ? 4 : GetCameraAutoRotateModeHook.Original(camera, framework));
@@ -73,6 +78,15 @@ namespace Cammy
 
         private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
         public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
+
+        private static delegate* unmanaged<IntPtr, int, byte> isInputIDLongPressed;
+        public static bool IsInputIDLongPressed(int i) => isInputIDLongPressed(inputData, i) != 0;
+
+        private static delegate* unmanaged<IntPtr, int, byte> isInputIDReleased;
+        public static bool IsInputIDReleased(int i) => isInputIDReleased(inputData, i) != 0;
+
+        private static delegate* unmanaged<IntPtr, int, int> getAnalogInputID;
+        public static float GetAnalogInputID(int i) => getAnalogInputID(inputData, i) / 100f;
 
         private static delegate* unmanaged<sbyte> getMouseWheelStatus;
         public static sbyte GetMouseWheelStatus() => getMouseWheelStatus();
@@ -128,9 +142,11 @@ namespace Cammy
             var vtbl = cameraManager->WorldCamera->VTable;
             GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
             GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
+            CanChangePerspectiveHook = new(vtbl[21], CanChangePerspectiveDetour); // Client__Game__Camera_vf21
             GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
             GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
             GetCameraPositionHook.Enable();
+            CanChangePerspectiveHook.Enable();
             GetZoomDeltaHook.Enable();
             GetCameraAutoRotateModeHook.Enable();
 
@@ -140,15 +156,18 @@ namespace Cammy
             getInputData = (delegate* unmanaged<Framework*, IntPtr>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
             isInputIDHeld = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
             isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
+            isInputIDLongPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 08 85 DB");
+            isInputIDReleased = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 88 43 0F");
+            getAnalogInputID = (delegate* unmanaged<IntPtr, int, int>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 66 44 0F 6E C3");
             getMouseWheelStatus = (delegate* unmanaged<sbyte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? F7 D8 48 8B CB");
             inputData = getInputData(Framework.Instance());
         }
 
         public static void Update()
         {
-            //for (int i = 0; i < 2000; i++)
+            //for (int i = 0; i < 1000; i++)
             //{
-            //    if (isInputIDHeld(inputData, i) > 0)
+            //    if (isInputIDPressed(inputData, i) > 0)
             //        Dalamud.Logging.PluginLog.Error($"{i}");
             //}
 
@@ -165,9 +184,10 @@ namespace Cammy
         public static void Dispose()
         {
             GetCameraPositionHook?.Dispose();
-            GetCameraAutoRotateModeHook?.Dispose();
             GetCameraTargetHook?.Dispose();
+            CanChangePerspectiveHook?.Dispose();
             GetZoomDeltaHook?.Dispose();
+            GetCameraAutoRotateModeHook?.Dispose();
         }
     }
 }

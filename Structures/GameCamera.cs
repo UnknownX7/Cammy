@@ -54,7 +54,7 @@ namespace Cammy.Structures
         public delegate*<IntPtr, IntPtr, void> vf18; // ??? requires 2 arguments (might need a float array)
         public delegate*<IntPtr, IntPtr> vf19; // ??? looks like it does something with targeting
         public delegate*<IntPtr, byte, int> vf20; // ??? requires 2 arguments
-        public delegate*<IntPtr, bool> vf21; // ??? looks like it returns a bool?
+        public delegate*<IntPtr, bool> vf21; // can change perspective (1st <-> 3rd)
         public delegate*<IntPtr, void> vf22; // ??? causes a "camera position set" toast with no obvious effect (switch statement with vf15 return)
         public delegate*<IntPtr, void> vf23; // loads the camera angle from 22 (switch statement with vf15 return)
         public delegate*<IntPtr, void> vf24; // causes a "camera position restored to default" toast and causes an effect similar to 1, but doesnt change horizontal angle to default (switch statement with vf15 return)

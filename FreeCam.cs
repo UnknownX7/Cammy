@@ -34,8 +34,7 @@ namespace Cammy
                 gameCamera->MinVRotation = -1.559f;
                 gameCamera->MaxVRotation = 1.559f;
                 gameCamera->CurrentFoV = gameCamera->MinFoV = gameCamera->MaxFoV = 0.78f;
-                gameCamera->MinZoom = 0;
-                gameCamera->CurrentZoom = gameCamera->MaxZoom = 0.1f;
+                gameCamera->CurrentZoom = gameCamera->MinZoom = gameCamera->MaxZoom = 0.1f;
                 Game.zoomDelta = 0;
                 gameCamera->AddedFoV = gameCamera->LookAtHeightOffset = 0;
                 gameCamera->Mode = 1;
@@ -49,10 +48,10 @@ namespace Cammy
                         //"\nJump / Ascend - Up," +
                         //"\nDescend - Down," +
                         "\nShift (Hold) - Speed up" +
-                        "\nZoom - Change Speed" +
-                        "\nC - Reset" +
-                        "\nCycle through Enemies (Nearest to Farthest) - Lock" +
-                        "\nCycle through Enemies (Farthest to Nearest) - Stop");
+                        "\nZoom / Controller Zoom (Autorun + Look Up / Down) - Change Speed" +
+                        "\nC / Controller Dismount (Autorun + Change Hotbar Set) - Reset" +
+                        "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
+                        "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop");
                 }
             }
             else
@@ -91,7 +90,7 @@ namespace Cammy
 
             if (!Enabled) return;
 
-            if (Game.IsInputIDPressed(366)) // Cycle through Enemies (Nearest to Farthest)
+            if (Game.IsInputIDPressed(366) || Game.IsInputIDReleased(433)) // Cycle through Enemies (Nearest to Farthest) / Controller Select HUD
             {
                 locked ^= true;
                 if (locked && Game.ForceDisableMovement > 0)
@@ -102,7 +101,7 @@ namespace Cammy
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-            if (Game.IsInputIDPressed(367) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Farthest to Nearest)
+            if (Game.IsInputIDPressed(367) || Game.IsInputIDPressed(35) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Farthest to Nearest) / Controller Open Main Menu
             {
                 Toggle();
                 return;
@@ -111,6 +110,14 @@ namespace Cammy
             if (locked) return;
 
             var movePos = Vector3.Zero;
+
+            var analogInputX = Game.GetAnalogInputID(4); // Controller Move Forward / Back
+            if (analogInputX != 0)
+                movePos.X = analogInputX;
+
+            var analogInputY = Game.GetAnalogInputID(3); // Controller Move Left / Right
+            if (analogInputY != 0)
+                movePos.Y = -analogInputY;
 
             if (Game.IsInputIDHeld(321) || Game.IsInputIDHeld(36) && Game.IsInputIDHeld(37)) // Move Forward / Left + Right Click
                 movePos.X += 1;
@@ -124,13 +131,13 @@ namespace Cammy
             if (Game.IsInputIDHeld(324) || Game.IsInputIDHeld(326)) // Move / Strafe Right
                 movePos.Y += -1;
 
-            if (Game.IsInputIDHeld(348) || Game.IsInputIDHeld(444)) // Jump / Ascend
+            if (Game.IsInputIDHeld(348) || Game.IsInputIDHeld(444) || Game.IsInputIDHeld(5)) // Jump / Ascend / Controller Jump
                 movePos.Z += 1;
 
-            if (Game.IsInputIDHeld(443)) // Descent
+            if (Game.IsInputIDHeld(443) || Game.IsInputIDHeld(2)) // Descent / Controller Cancel
                 movePos.Z -= 1;
 
-            if (DalamudApi.KeyState[67]) // C
+            if (DalamudApi.KeyState[67] || Game.IsInputIDPressed(18)) // C / Controller Dismount (Autorun + Change Hotbar Set)
             {
                 DalamudApi.KeyState[67] = false;
                 speed = 1;
@@ -152,11 +159,24 @@ namespace Cammy
             if (mouseWheelStatus != 0)
                 speed *= 1 + 0.2f * mouseWheelStatus;
 
+            if (Game.IsInputIDHeld(17)) // Controller Autorun
+            {
+                switch (Game.GetAnalogInputID(6)) // Controller Move Camera Up / Down
+                {
+                    case >= 0.6f:
+                        speed *= 1 + 1.5f * (float)DalamudApi.Framework.UpdateDelta.TotalSeconds;
+                        break;
+                    case <= -0.6f:
+                        speed *= 1 - 1.5f * (float)DalamudApi.Framework.UpdateDelta.TotalSeconds;
+                        break;
+                }
+            }
+
             if (movePos == Vector3.Zero) return;
 
             movePos *= (float)(DalamudApi.Framework.UpdateDelta.TotalSeconds * 20) * speed;
 
-            if (ImGui.GetIO().KeyShift)
+            if (ImGui.GetIO().KeyShift) // Shift
                 movePos *= 10;
             const double halfPI = Math.PI / 2f;
             var hAngle = gameCamera->CurrentHRotation + halfPI;
