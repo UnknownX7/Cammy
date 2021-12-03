@@ -137,13 +137,13 @@ namespace Cammy
 
         public static void Initialize()
         {
-            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 34 C6 F3"); // g_ControlSystem_CameraManager
+            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 09"); // g_ControlSystem_CameraManager
 
             var vtbl = cameraManager->WorldCamera->VTable;
-            GetCameraPositionHook = new(vtbl[14], GetCameraPositionDetour); // Client__Game__Camera_vf14
-            GetCameraTargetHook = new(vtbl[16], GetCameraTargetDetour); // Client__Game__Camera_vf16
-            CanChangePerspectiveHook = new(vtbl[21], CanChangePerspectiveDetour); // Client__Game__Camera_vf21
-            GetZoomDeltaHook = new(vtbl[27], GetZoomDeltaDetour); // Client__Game__Camera_vf27
+            GetCameraPositionHook = new(vtbl[15], GetCameraPositionDetour); // Client__Game__Camera_vf15
+            GetCameraTargetHook = new(vtbl[17], GetCameraTargetDetour); // Client__Game__Camera_vf17
+            CanChangePerspectiveHook = new(vtbl[22], CanChangePerspectiveDetour); // Client__Game__Camera_vf22
+            GetZoomDeltaHook = new(vtbl[28], GetZoomDeltaDetour); // Client__Game__Camera_vf28
             GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
             GetCameraPositionHook.Enable();
             CanChangePerspectiveHook.Enable();
