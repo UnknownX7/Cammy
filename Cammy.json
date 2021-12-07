@@ -14,7 +14,7 @@
   "InternalName": "Cammy",
   "AssemblyVersion": "",
   "ApplicableVersion": "any",
-  "DalamudApiLevel": 4,
+  "DalamudApiLevel": 5,
   "LoadPriority": 0,
   "Changelog": ""
 }
