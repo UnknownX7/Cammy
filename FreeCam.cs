@@ -204,14 +204,14 @@ namespace Cammy
 
             if (ImGui.GetIO().KeyShift) // Shift
                 movePos *= 10;
-            const double halfPI = Math.PI / 2f;
+            const float halfPI = MathF.PI / 2f;
             var hAngle = gameCamera->CurrentHRotation + halfPI;
             var vAngle = gameCamera->CurrentVRotation;
-            var direction = new Vector3((float)(Math.Cos(hAngle) * Math.Cos(vAngle)), -(float)(Math.Sin(hAngle) * Math.Cos(vAngle)), (float)Math.Sin(vAngle));
+            var direction = new Vector3(MathF.Cos(hAngle) * MathF.Cos(vAngle), -(MathF.Sin(hAngle) * MathF.Cos(vAngle)), MathF.Sin(vAngle));
 
             var amount = direction * movePos.X;
-            var x = amount.X + movePos.Y * (float)Math.Sin(gameCamera->CurrentHRotation - halfPI);
-            var y = amount.Y + movePos.Y * (float)Math.Cos(gameCamera->CurrentHRotation - halfPI);
+            var x = amount.X + movePos.Y * MathF.Sin(gameCamera->CurrentHRotation - halfPI);
+            var y = amount.Y + movePos.Y * MathF.Cos(gameCamera->CurrentHRotation - halfPI);
             var z = amount.Z + movePos.Z;
 
             if (loggedIn)

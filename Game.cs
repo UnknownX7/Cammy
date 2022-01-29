@@ -24,14 +24,22 @@ namespace Cammy
         public static ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
         public static float cameraHeightOffset = 0;
-        private delegate void GetCameraPositionDelegate(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson);
+        public static float cameraSideOffset = 0;
+        private delegate void GetCameraPositionDelegate(GameCamera* camera, IntPtr target, float* vectorPosition, bool swapPerson);
         private static Hook<GetCameraPositionDelegate> GetCameraPositionHook;
-        private static void GetCameraPositionDetour(IntPtr camera, IntPtr target, float* vectorPosition, bool swapPerson)
+        private static void GetCameraPositionDetour(GameCamera* camera, IntPtr target, float* vectorPosition, bool swapPerson)
         {
             if (!FreeCam.Enabled)
             {
                 GetCameraPositionHook.Original(camera, target, vectorPosition, swapPerson);
                 vectorPosition[1] += cameraHeightOffset;
+
+                if (cameraSideOffset == 0 || camera->Mode != 1) return;
+
+                const float halfPI = MathF.PI / 2f;
+                var a = cameraManager->WorldCamera->CurrentHRotation - halfPI;
+                vectorPosition[0] += -cameraSideOffset * MathF.Sin(a);
+                vectorPosition[2] += -cameraSideOffset * MathF.Cos(a);
             }
             else
             {
