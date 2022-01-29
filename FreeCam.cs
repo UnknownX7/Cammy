@@ -25,13 +25,14 @@ namespace Cammy
             var isMainMenu = !DalamudApi.Condition.Any();
             if (enable)
             {
+                gameCamera = isMainMenu ? Game.cameraManager->MenuCamera : Game.cameraManager->WorldCamera;
+
                 locked = false;
                 speed = 1;
-                position = DalamudApi.ClientState.LocalPlayer?.Position is { } pos ? new(pos.X, pos.Z, pos.Y + 1) : new();
+                position = new(gameCamera->ViewX, gameCamera->ViewY, gameCamera->ViewZ);
                 onDeath = death;
-
-                gameCamera = isMainMenu ? Game.cameraManager->MenuCamera : Game.cameraManager->WorldCamera;
                 prevZoom = gameCamera->CurrentZoom;
+
                 if (isMainMenu)
                     *(byte*)((IntPtr)gameCamera + 0x2A0) = 0;
                 gameCamera->MinVRotation = -1.559f;

@@ -25,6 +25,9 @@ namespace Cammy.Structures
         [FieldOffset(0x160)] public float Tilt;
         [FieldOffset(0x170)] public int Mode; // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
         //[FieldOffset(0x174)] public int ControlType; // 0 first person, 1 legacy, 2 standard, 3/5/6 ???, 4 ???
+        [FieldOffset(0x1B0)] public float ViewX;
+        [FieldOffset(0x1B4)] public float ViewZ;
+        [FieldOffset(0x1B8)] public float ViewY;
         [FieldOffset(0x218)] public float LookAtHeightOffset; // No idea what to call this
         [FieldOffset(0x21C)] public byte ResetLookatHeightOffset; // No idea what to call this
         [FieldOffset(0x2B4)] public float Z2;
