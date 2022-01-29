@@ -106,8 +106,8 @@ namespace Cammy
                 }
                 case "spectate":
                 {
-                    Game.ToggleSpectate();
-                    PrintEcho($"Spectating is now {(Game.GetCameraTargetHook.IsEnabled ? "enabled" : "disabled")}!");
+                    Game.EnableSpectating ^= true;
+                    PrintEcho($"Spectating is now {(Game.EnableSpectating ? "enabled" : "disabled")}!");
                     break;
                 }
                 case "nocollide":

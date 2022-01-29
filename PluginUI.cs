@@ -359,13 +359,15 @@ namespace Cammy
                 ImGui.TextColored(new Vector4(0, 1, 0, 1), "Enabled");
             }
 
+            var save = false;
+
             ImGui.Spacing();
             ImGui.Columns(3, null, false);
 
             {
-                var _ = Game.GetCameraTargetHook.IsEnabled;
+                var _ = Game.EnableSpectating;
                 if (ImGui.Checkbox("Spectate Focus / Soft Target", ref _))
-                    Game.ToggleSpectate();
+                    Game.EnableSpectating = _;
             }
 
             {
@@ -374,10 +376,6 @@ namespace Cammy
                 if (ImGui.Checkbox("Free Cam", ref _))
                     FreeCam.Toggle();
             }
-
-            ImGui.NextColumn();
-            if (ImGui.Checkbox("Toggle Free Cam on Death/Revive", ref Cammy.Config.FreeCamOnDeath))
-                Cammy.Config.Save();
 
             if (Game.cameraNoCollideReplacer.IsValid)
             {
@@ -388,6 +386,16 @@ namespace Cammy
             }
 
             ImGui.Columns(1);
+
+            ImGui.TextUnformatted("Death Cam Mode");
+            ImGui.Indent();
+            save |= ImGui.RadioButton("None##DeathCam", ref Cammy.Config.DeathCamMode, 0);
+            ImGui.SameLine();
+            save |= ImGui.RadioButton("Spectate Target##DeathCam", ref Cammy.Config.DeathCamMode, 1);
+            ImGui.SameLine();
+            save |= ImGui.RadioButton("Free Cam##DeathCam", ref Cammy.Config.DeathCamMode, 2);
+            ImGui.Unindent();
+
             ImGui.Spacing();
 
             {
@@ -400,6 +408,9 @@ namespace Cammy
                 if (ImGui.SliderInt("???", ref _, 0, 2))
                     Game.cameraManager->WorldCamera->Mode = _;
             }
+
+            if (save)
+                Cammy.Config.Save();
         }
 
         private static void DrawFreeCamButton()

@@ -111,7 +111,7 @@ namespace Cammy
 
         public static void Update()
         {
-            if (Cammy.Config.FreeCamOnDeath)
+            if (Cammy.Config.DeathCamMode == 2)
                 CheckDeath();
 
             if (!Enabled) return;

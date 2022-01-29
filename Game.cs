@@ -10,6 +10,7 @@ namespace Cammy
     {
         public static CameraManager* cameraManager;
 
+        public static bool EnableSpectating { get; set; } = false;
         public static float? cachedDefaultLookAtHeight = null;
 
         // This variable is merged with a lot of other constants so it's not possible to change normally
@@ -45,16 +46,25 @@ namespace Cammy
         public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
         private static IntPtr GetCameraTargetDetour(IntPtr camera)
         {
-            if (DalamudApi.TargetManager.FocusTarget is { } focus)
+            if (EnableSpectating)
             {
-                IsSpectating = true;
-                return focus.Address;
+                if (DalamudApi.TargetManager.FocusTarget is { } focus)
+                {
+                    IsSpectating = true;
+                    return focus.Address;
+                }
+
+                if (DalamudApi.TargetManager.SoftTarget is { } soft)
+                {
+                    IsSpectating = true;
+                    return soft.Address;
+                }
             }
 
-            if (DalamudApi.TargetManager.SoftTarget is { } soft)
+            if (Cammy.Config.DeathCamMode == 1 && DalamudApi.Condition[ConditionFlag.Unconscious] && DalamudApi.TargetManager.Target is { } target)
             {
                 IsSpectating = true;
-                return soft.Address;
+                return target.Address;
             }
 
             IsSpectating = false;
@@ -122,19 +132,6 @@ namespace Cammy
             return ret;
         }
 
-        public static void ToggleSpectate()
-        {
-            if (!GetCameraTargetHook.IsEnabled)
-            {
-                GetCameraTargetHook.Enable();
-            }
-            else
-            {
-                GetCameraTargetHook.Disable();
-                IsSpectating = false;
-            }
-        }
-
         public static void Initialize()
         {
             cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 09"); // g_ControlSystem_CameraManager
@@ -146,6 +143,7 @@ namespace Cammy
             GetZoomDeltaHook = new(vtbl[28], GetZoomDeltaDetour); // Client__Game__Camera_vf28
             GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
             GetCameraPositionHook.Enable();
+            GetCameraTargetHook.Enable();
             CanChangePerspectiveHook.Enable();
             GetZoomDeltaHook.Enable();
             GetCameraAutoRotateModeHook.Enable();

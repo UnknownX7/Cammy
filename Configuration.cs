@@ -100,10 +100,17 @@ namespace Cammy
 
         [Obsolete] public CameraEditor.CameraPreset CameraPreset { internal get; set; }
         public List<CameraConfigPreset> Presets = new();
-        public bool FreeCamOnDeath = false;
+        [Obsolete] public bool FreeCamOnDeath { internal get; set; }
+        public int DeathCamMode = 0;
 
         public void Initialize()
         {
+            if (FreeCamOnDeath)
+            {
+                DeathCamMode = 2;
+                Save();
+            }
+
             if (CameraPreset == null) return;
 
             Presets.Add(new()
