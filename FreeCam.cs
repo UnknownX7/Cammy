@@ -16,6 +16,8 @@ namespace Cammy
         private static float speed = 1;
         public static Vector3 position;
         private static bool onDeath = false;
+        private static bool onDeathActivated = false;
+        private static float prevZoom = 0;
 
         public static void Toggle(bool death = false)
         {
@@ -29,6 +31,7 @@ namespace Cammy
                 onDeath = death;
 
                 gameCamera = isMainMenu ? Game.cameraManager->MenuCamera : Game.cameraManager->WorldCamera;
+                prevZoom = gameCamera->CurrentZoom;
                 if (isMainMenu)
                     *(byte*)((IntPtr)gameCamera + 0x2A0) = 0;
                 gameCamera->MinVRotation = -1.559f;
@@ -43,19 +46,24 @@ namespace Cammy
                 if (!isMainMenu)
                 {
                     Game.ForceDisableMovement++;
-                    Cammy.PrintEcho("Additional Controls:" +
-                        //"\nMove Keybinds - Move," +
-                        //"\nJump / Ascend - Up," +
-                        //"\nDescend - Down," +
-                        "\nShift (Hold) - Speed up" +
-                        "\nZoom / Controller Zoom (Autorun + Look Up / Down) - Change Speed" +
-                        "\nC / Controller Dismount (Autorun + Change Hotbar Set) - Reset" +
-                        "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
-                        "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop");
+
+                    if (!death)
+                    {
+                        Cammy.PrintEcho("Additional Controls:" +
+                            //"\nMove Keybinds - Move," +
+                            //"\nJump / Ascend - Up," +
+                            //"\nDescend - Down," +
+                            "\nShift (Hold) - Speed up" +
+                            "\nZoom / Controller Zoom (Autorun + Look Up / Down) - Change Speed" +
+                            "\nC / Controller Dismount (Autorun + Change Hotbar Set) - Reset" +
+                            "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
+                            "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop");
+                    }
                 }
             }
             else
             {
+                gameCamera->CurrentZoom = prevZoom;
                 gameCamera = null;
                 Game.cameraNoCollideReplacer.Disable();
 
@@ -83,10 +91,28 @@ namespace Cammy
             ToggleAddonVisible("_TitleLogo");
         }
 
+        public static void CheckDeath()
+        {
+            var dead = DalamudApi.Condition[ConditionFlag.Unconscious];
+            if (onDeathActivated)
+            {
+                onDeathActivated = dead;
+                if (!onDeathActivated && onDeath && Enabled)
+                    Toggle(true);
+                return;
+            }
+
+            if (!dead) return;
+
+            if (!Enabled)
+                Toggle(true);
+            onDeathActivated = true;
+        }
+
         public static void Update()
         {
-            if (!Enabled && Cammy.Config.FreeCamOnDeath && DalamudApi.Condition[ConditionFlag.Unconscious] || Enabled && onDeath && !DalamudApi.Condition[ConditionFlag.Unconscious])
-                Toggle(true);
+            if (Cammy.Config.FreeCamOnDeath)
+                CheckDeath();
 
             if (!Enabled) return;
 

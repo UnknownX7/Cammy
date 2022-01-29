@@ -1,3 +1,4 @@
+global using Dalamud;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +24,10 @@ using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 
+// ReSharper disable CheckNamespace
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 
-namespace Cammy
+namespace Dalamud
 {
     public class DalamudApi
     {
