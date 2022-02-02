@@ -76,7 +76,7 @@ namespace Cammy
             }
 
             IsSpectating = false;
-            return DalamudApi.ClientState.LocalPlayer is { } player ? player.Address : IntPtr.Zero;
+            return GetCameraTargetHook.Original(camera);
         }
 
         private delegate byte CanChangePerspectiveDelegate();
