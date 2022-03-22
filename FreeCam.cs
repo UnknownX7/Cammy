@@ -117,6 +117,8 @@ namespace Cammy
 
             if (!Enabled) return;
 
+            if (Input.Disabled || Cammy.Input == null) return;
+
             if (Game.IsInputIDPressed(366) || Game.IsInputIDReleased(433)) // Cycle through Enemies (Nearest to Farthest) / Controller Select HUD
             {
                 locked ^= true;

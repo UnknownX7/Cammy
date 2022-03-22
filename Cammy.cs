@@ -13,6 +13,7 @@ namespace Cammy
         public string Name => "Cammy";
         public static Cammy Plugin { get; private set; }
         public static Configuration Config { get; private set; }
+        public static Input? Input { get; set; }
 
         private readonly bool pluginReady = false;
 
@@ -35,6 +36,7 @@ namespace Cammy
 
                 Game.Initialize();
                 IPC.Initialize();
+                Input = new Input();
 
                 pluginReady = true;
             }
