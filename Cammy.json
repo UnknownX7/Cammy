@@ -14,7 +14,7 @@
   "InternalName": "Cammy",
   "AssemblyVersion": "",
   "ApplicableVersion": "any",
-  "DalamudApiLevel": 5,
+  "DalamudApiLevel": 6,
   "LoadPriority": 0,
-  "Changelog": "Free cam improvements, side offset, new death cam mode"
+  "Changelog": ""
 }
