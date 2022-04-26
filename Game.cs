@@ -142,7 +142,7 @@ namespace Cammy
 
         public static void Initialize()
         {
-            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("48 8D 35 ?? ?? ?? ?? 48 8B 09"); // g_ControlSystem_CameraManager
+            cameraManager = (CameraManager*)DalamudApi.SigScanner.GetStaticAddressFromSig("4C 8D 35 ?? ?? ?? ?? 85 D2"); // g_ControlSystem_CameraManager
 
             var vtbl = cameraManager->WorldCamera->VTable;
             GetCameraPositionHook = new(vtbl[15], GetCameraPositionDetour); // Client__Game__Camera_vf15
