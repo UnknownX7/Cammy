@@ -49,6 +49,14 @@ namespace Cammy
             }
         }
 
+        public delegate void SetCameraLookAtDelegate(IntPtr camera, float* lookAtPosition, float* cameraPosition, float* a4);
+        public static Hook<SetCameraLookAtDelegate> SetCameraLookAtHook;
+        private static void SetCameraLookAtDetour(IntPtr camera, float* lookAtPosition, float* cameraPosition, float* a4) // a4 seems to be immediately overwritten and unused
+        {
+            if (FreeCam.Enabled) return;
+            SetCameraLookAtHook.Original(camera, lookAtPosition, cameraPosition, a4);
+        }
+
         public static bool IsSpectating { get; private set; } = false;
         public delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
         public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
@@ -133,7 +141,7 @@ namespace Cammy
 
             var prev = worldCamera->LookAtHeightOffset;
             worldCamera->ResetLookatHeightOffset = 1;
-            ((delegate* unmanaged<GameCamera*, void>)worldCamera->VTable[2])(worldCamera);
+            ((delegate* unmanaged<GameCamera*, void>)worldCamera->VTable[3])(worldCamera);
             var ret = worldCamera->LookAtHeightOffset;
             worldCamera->LookAtHeightOffset = prev;
             cachedDefaultLookAtHeight = ret;
@@ -146,11 +154,13 @@ namespace Cammy
 
             var vtbl = cameraManager->WorldCamera->VTable;
             GetCameraPositionHook = new(vtbl[15], GetCameraPositionDetour); // Client__Game__Camera_vf15
+            SetCameraLookAtHook = new(vtbl[14], SetCameraLookAtDetour); // Client__Game__Camera_vf14
             GetCameraTargetHook = new(vtbl[17], GetCameraTargetDetour); // Client__Game__Camera_vf17
             CanChangePerspectiveHook = new(vtbl[22], CanChangePerspectiveDetour); // Client__Game__Camera_vf22
             GetZoomDeltaHook = new(vtbl[28], GetZoomDeltaDetour); // Client__Game__Camera_vf28
             GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
             GetCameraPositionHook.Enable();
+            SetCameraLookAtHook.Enable();
             GetCameraTargetHook.Enable();
             CanChangePerspectiveHook.Enable();
             GetZoomDeltaHook.Enable();
@@ -190,6 +200,7 @@ namespace Cammy
         public static void Dispose()
         {
             GetCameraPositionHook?.Dispose();
+            SetCameraLookAtHook?.Dispose();
             GetCameraTargetHook?.Dispose();
             CanChangePerspectiveHook?.Dispose();
             GetZoomDeltaHook?.Dispose();

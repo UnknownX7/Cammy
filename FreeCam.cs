@@ -38,9 +38,8 @@ namespace Cammy
                 gameCamera->MinVRotation = -1.559f;
                 gameCamera->MaxVRotation = 1.559f;
                 gameCamera->CurrentFoV = gameCamera->MinFoV = gameCamera->MaxFoV = 0.78f;
-                gameCamera->CurrentZoom = gameCamera->MinZoom = gameCamera->MaxZoom = 0.1f;
+                gameCamera->CurrentZoom = gameCamera->MinZoom = gameCamera->MaxZoom = 0;
                 Game.zoomDelta = 0;
-                gameCamera->LookAtHeightOffset = 0;
                 gameCamera->Mode = 1;
                 Game.cameraNoCollideReplacer.Enable();
 
@@ -64,10 +63,6 @@ namespace Cammy
             }
             else
             {
-                gameCamera->CurrentZoom = prevZoom;
-                gameCamera = null;
-                Game.cameraNoCollideReplacer.Disable();
-
                 if (!isMainMenu)
                 {
                     if (!locked && Game.ForceDisableMovement > 0)
@@ -75,6 +70,10 @@ namespace Cammy
                     new CameraConfigPreset().Apply();
                     PresetManager.DisableCameraPresets();
                 }
+
+                gameCamera->CurrentZoom = gameCamera->InterpolatedZoom = prevZoom;
+                gameCamera = null;
+                Game.cameraNoCollideReplacer.Disable();
             }
 
             if (!isMainMenu) return;
@@ -175,10 +174,10 @@ namespace Cammy
                 }
                 else
                 {
-                    gameCamera->X = 0;
-                    gameCamera->Y = 0;
-                    gameCamera->Z = 0;
-                    gameCamera->Z2 = 0;
+                    gameCamera->LookAtX = 0;
+                    gameCamera->LookAtY = 0;
+                    gameCamera->LookAtZ = 0;
+                    gameCamera->LookAtZ2 = 0;
                 }
             }
 
@@ -223,9 +222,9 @@ namespace Cammy
             }
             else
             {
-                gameCamera->X += x;
-                gameCamera->Y += y;
-                gameCamera->Z2 = gameCamera->Z += z;
+                gameCamera->LookAtX += x;
+                gameCamera->LookAtY += y;
+                gameCamera->LookAtZ2 = gameCamera->LookAtZ += z;
             }
         }
     }

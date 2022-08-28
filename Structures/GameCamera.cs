@@ -7,9 +7,12 @@ namespace Cammy.Structures
     public unsafe struct GameCamera
     {
         [FieldOffset(0x0)] public IntPtr* VTable;
-        [FieldOffset(0x90)] public float X;
-        [FieldOffset(0x94)] public float Z;
-        [FieldOffset(0x98)] public float Y;
+        [FieldOffset(0x60)] public float X;
+        [FieldOffset(0x64)] public float Z;
+        [FieldOffset(0x68)] public float Y;
+        [FieldOffset(0x90)] public float LookAtX; // Position that the camera is focused on (Actual position when zoom is 0)
+        [FieldOffset(0x94)] public float LookAtZ;
+        [FieldOffset(0x98)] public float LookAtY;
         [FieldOffset(0x114)] public float CurrentZoom; // 6
         [FieldOffset(0x118)] public float MinZoom; // 1.5
         [FieldOffset(0x11C)] public float MaxZoom; // 20
@@ -23,14 +26,17 @@ namespace Cammy.Structures
         [FieldOffset(0x148)] public float MinVRotation; // -1.483530, should be -+pi/2 for straight down/up but camera breaks so use -+1.569
         [FieldOffset(0x14C)] public float MaxVRotation; // 0.785398 (pi/4)
         [FieldOffset(0x160)] public float Tilt;
-        [FieldOffset(0x170)] public int Mode; // camera mode??? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
+        [FieldOffset(0x170)] public int Mode; // Camera mode? (0 = 1st person, 1 = 3rd person, 2+ = weird controller mode? cant look up/down)
         //[FieldOffset(0x174)] public int ControlType; // 0 first person, 1 legacy, 2 standard, 3/5/6 ???, 4 ???
+        [FieldOffset(0x17C)] public float InterpolatedZoom;
         [FieldOffset(0x1B0)] public float ViewX;
         [FieldOffset(0x1B4)] public float ViewZ;
         [FieldOffset(0x1B8)] public float ViewY;
-        [FieldOffset(0x218)] public float LookAtHeightOffset; // No idea what to call this
-        [FieldOffset(0x21C)] public byte ResetLookatHeightOffset; // No idea what to call this
-        [FieldOffset(0x2B4)] public float Z2;
+        //[FieldOffset(0x1E4)] public byte FlipCamera; // 1 while holding the keybind
+        [FieldOffset(0x224)] public float LookAtHeightOffset; // No idea what to call this (0x230 is the interpolated value)
+        [FieldOffset(0x228)] public byte ResetLookatHeightOffset; // No idea what to call this
+        //[FieldOffset(0x230)] public float InterpolatedLookAtHeightOffset;
+        [FieldOffset(0x2B4)] public float LookAtZ2;
     }
 
     /*
@@ -50,7 +56,7 @@ namespace Cammy.Structures
         public delegate*<void> vf11; // empty function
         public delegate*<IntPtr, IntPtr, bool> vf12; // ??? looks like it returns a bool? (runs whenever the camera gets too close to the character) (compares vf16 return to 2nd argument)
         public delegate*<IntPtr, byte> vf13; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
-        public delegate*<IntPtr, IntPtr, IntPtr, IntPtr> vf14; // applies center height offset (might need a float array)
+        public delegate*<void, IntPtr, IntPtr, IntPtr, IntPtr> vf14; // applies center height offset
         public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf15; // set position (requires 4 arguments, might need a float array)
         public delegate*<IntPtr, byte> vf16; // get control type? returns 1 for legacy, 2 for standard (this value is applied to 0x174)
         public delegate*<IntPtr, IntPtr> vf17; // get camera target
