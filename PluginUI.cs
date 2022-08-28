@@ -341,24 +341,11 @@ namespace Cammy
         private static unsafe void DrawOtherSettings()
         {
             ImGui.TextUnformatted("QoL Bar Status:");
+            ImGui.SameLine();
             if (!IPC.QoLBarEnabled)
-            {
-                ImGui.SameLine();
                 ImGui.TextColored(new Vector4(1, 0, 0, 1), "Disabled");
-                ImGui.SameLine();
-                ImGui.PushFont(UiBuilder.IconFont);
-                if (ImGui.SmallButton($"{FontAwesomeIcon.UndoAlt.ToIconString()}##CheckQoLBar"))
-                {
-                    IPC.Dispose();
-                    IPC.Initialize();
-                }
-                ImGui.PopFont();
-            }
             else
-            {
-                ImGui.SameLine();
                 ImGui.TextColored(new Vector4(0, 1, 0, 1), "Enabled");
-            }
 
             var save = false;
 
