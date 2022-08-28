@@ -96,6 +96,11 @@ namespace Cammy
         private static Hook<GetCameraAutoRotateModeDelegate> GetCameraAutoRotateModeHook;
         private static byte GetCameraAutoRotateModeDetour(IntPtr camera, IntPtr framework) => (byte)(FreeCam.Enabled || IsSpectating ? 4 : GetCameraAutoRotateModeHook.Original(camera, framework));
 
+        public delegate float GetCameraMaxMaintainDistanceDelegate(GameCamera* camera);
+        public static Hook<GetCameraMaxMaintainDistanceDelegate> GetCameraMaxMaintainDistanceHook;
+        // The camera isn't even used in the function...
+        private static float GetCameraMaxMaintainDistanceDetour(GameCamera* camera) => GetCameraMaxMaintainDistanceHook.Original(camera) is var ret && ret < 10f ? ret : camera->MaxZoom;
+
         private static IntPtr inputData;
         private static delegate* unmanaged<Framework*, IntPtr> getInputData;
 
@@ -121,6 +126,8 @@ namespace Cammy
         public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
         public static readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+
+        public static Memory.Replacer addMidHookReplacer;
 
         public static bool isLoggedIn = false;
         public static bool onLogin = false;
@@ -159,12 +166,15 @@ namespace Cammy
             CanChangePerspectiveHook = new(vtbl[22], CanChangePerspectiveDetour); // Client__Game__Camera_vf22
             GetZoomDeltaHook = new(vtbl[28], GetZoomDeltaDetour); // Client__Game__Camera_vf28
             GetCameraAutoRotateModeHook = new(DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B CB 85 C0 0F 84 ?? ?? ?? ?? 83 E8 01"), GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
+            var maintainDistanceAddress = DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? F3 0F 5D 44 24 58");
+            GetCameraMaxMaintainDistanceHook = new(maintainDistanceAddress, GetCameraMaxMaintainDistanceDetour); // Found 1 function deep inside Client__Game__Camera_vf3
             GetCameraPositionHook.Enable();
             SetCameraLookAtHook.Enable();
             GetCameraTargetHook.Enable();
             CanChangePerspectiveHook.Enable();
             GetZoomDeltaHook.Enable();
             GetCameraAutoRotateModeHook.Enable();
+            GetCameraMaxMaintainDistanceHook.Enable();
 
             foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
             forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("48 83 EC 28 83 3D ?? ?? ?? ?? ?? 0F 87") + 1; // Why is this 1 off? (Also found at g_PlayerMoveController + 0x51C)
@@ -177,6 +187,22 @@ namespace Cammy
             getAnalogInputID = (delegate* unmanaged<IntPtr, int, int>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 66 44 0F 6E C3");
             getMouseWheelStatus = (delegate* unmanaged<sbyte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? F7 D8 48 8B CB");
             inputData = getInputData(Framework.Instance());
+
+            // Gross workaround for fixing legacy control's maintain distance
+            var address = DalamudApi.SigScanner.ScanModule("48 85 C9 74 24 48 83 C1 10");
+            var offset = BitConverter.GetBytes((long)maintainDistanceAddress - (long)(address + 0x8));
+
+            // mov rcx, rbx
+            // call offset
+            // jmp 27h
+            addMidHookReplacer = new(address,
+                new byte[] {
+                    0x48, 0x8B, 0xCB,
+                    0xE8, offset[0], offset[1], offset[2], offset[3],
+                    0xEB, 0x27,
+                    0x90, 0x90, 0x90, 0x90
+                },
+                true);
         }
 
         public static void Update()
@@ -205,6 +231,7 @@ namespace Cammy
             CanChangePerspectiveHook?.Dispose();
             GetZoomDeltaHook?.Dispose();
             GetCameraAutoRotateModeHook?.Dispose();
+            GetCameraMaxMaintainDistanceHook?.Dispose();
         }
     }
 }
