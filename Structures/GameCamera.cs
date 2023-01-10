@@ -6,7 +6,7 @@ namespace Cammy.Structures
     [StructLayout(LayoutKind.Explicit)]
     public unsafe struct GameCamera
     {
-        [FieldOffset(0x0)] public IntPtr* VTable;
+        [FieldOffset(0x0)] public nint* VTable;
         [FieldOffset(0x60)] public float X;
         [FieldOffset(0x64)] public float Z;
         [FieldOffset(0x68)] public float Y;
@@ -42,33 +42,33 @@ namespace Cammy.Structures
     /*
     public unsafe class VirtualTable
     {
-        public delegate*<IntPtr, byte, void> vf0; // Dispose
-        public delegate*<IntPtr, void> vf1; // Init
-        public delegate*<IntPtr, void> vf2; // ??? (new in endwalker)
-        public delegate*<IntPtr, void> vf3; // Update
-        public delegate*<IntPtr, IntPtr> vf4; // ??? crashes (calls scene camera vf1)
-        public delegate*<IntPtr, void> vf5; // reset camera angle
-        public delegate*<IntPtr, IntPtr> vf6; // ??? gets something (might need a float array)
-        public delegate*<IntPtr, IntPtr> vf7; // ??? get position / rotation? (might need a float array)
-        public delegate*<IntPtr, void> vf8; // duplicate of 4
-        public delegate*<IntPtr, void> vf9; // ??? (runs whenever the camera is swapped to)
+        public delegate*<nint, byte, void> vf0; // Dispose
+        public delegate*<nint, void> vf1; // Init
+        public delegate*<nint, void> vf2; // ??? (new in endwalker)
+        public delegate*<nint, void> vf3; // Update
+        public delegate*<nint, nint> vf4; // ??? crashes (calls scene camera vf1)
+        public delegate*<nint, void> vf5; // reset camera angle
+        public delegate*<nint, nint> vf6; // ??? gets something (might need a float array)
+        public delegate*<nint, nint> vf7; // ??? get position / rotation? (might need a float array)
+        public delegate*<nint, void> vf8; // duplicate of 4
+        public delegate*<nint, void> vf9; // ??? (runs whenever the camera is swapped to)
         public delegate*<void> vf10; // empty function (for the world camera anyway) (runs whenever the camera is swapped from)
         public delegate*<void> vf11; // empty function
-        public delegate*<IntPtr, IntPtr, bool> vf12; // ??? looks like it returns a bool? (runs whenever the camera gets too close to the character) (compares vf16 return to 2nd argument)
-        public delegate*<IntPtr, byte> vf13; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
-        public delegate*<void, IntPtr, IntPtr, IntPtr, IntPtr> vf14; // applies center height offset
-        public delegate*<IntPtr, IntPtr, IntPtr, byte, void> vf15; // set position (requires 4 arguments, might need a float array)
-        public delegate*<IntPtr, byte> vf16; // get control type? returns 1 for legacy, 2 for standard (this value is applied to 0x174)
-        public delegate*<IntPtr, IntPtr> vf17; // get camera target
-        public delegate*<IntPtr, IntPtr, float> vf18; // ??? crashes
-        public delegate*<IntPtr, IntPtr, void> vf19; // ??? requires 2 arguments (might need a float array)
-        public delegate*<IntPtr, IntPtr> vf20; // ??? looks like it does something with targeting
-        public delegate*<IntPtr, byte, int> vf21; // ??? requires 2 arguments
-        public delegate*<IntPtr, bool> vf22; // can change perspective (1st <-> 3rd) (SOMETHING CHANGED IN ENDWALKER)
-        public delegate*<IntPtr, void> vf23; // ??? causes a "camera position set" toast with no obvious effect (switch statement with vf15 return)
-        public delegate*<IntPtr, void> vf24; // loads the camera angle from 22 (switch statement with vf15 return)
-        public delegate*<IntPtr, void> vf25; // causes a "camera position restored to default" toast and causes an effect similar to 1, but doesnt change horizontal angle to default (switch statement with vf15 return)
-        public delegate*<IntPtr, float, float> vf26; // ??? places the camera really high above character
+        public delegate*<nint, nint, bool> vf12; // ??? looks like it returns a bool? (runs whenever the camera gets too close to the character) (compares vf16 return to 2nd argument)
+        public delegate*<nint, byte> vf13; // ??? looks like it does something with inputs (returns 0/1 depending on some input)
+        public delegate*<void, nint, nint, nint, nint> vf14; // applies center height offset
+        public delegate*<nint, nint, nint, byte, void> vf15; // set position (requires 4 arguments, might need a float array)
+        public delegate*<nint, byte> vf16; // get control type? returns 1 for legacy, 2 for standard (this value is applied to 0x174)
+        public delegate*<nint, nint> vf17; // get camera target
+        public delegate*<nint, nint, float> vf18; // ??? crashes
+        public delegate*<nint, nint, void> vf19; // ??? requires 2 arguments (might need a float array)
+        public delegate*<nint, nint> vf20; // ??? looks like it does something with targeting
+        public delegate*<nint, byte, int> vf21; // ??? requires 2 arguments
+        public delegate*<nint, bool> vf22; // can change perspective (1st <-> 3rd) (SOMETHING CHANGED IN ENDWALKER)
+        public delegate*<nint, void> vf23; // ??? causes a "camera position set" toast with no obvious effect (switch statement with vf15 return)
+        public delegate*<nint, void> vf24; // loads the camera angle from 22 (switch statement with vf15 return)
+        public delegate*<nint, void> vf25; // causes a "camera position restored to default" toast and causes an effect similar to 1, but doesnt change horizontal angle to default (switch statement with vf15 return)
+        public delegate*<nint, float, float> vf26; // ??? places the camera really high above character
         public delegate*<float> vf27; // get max distance? doesnt seem to return anything except 20 ever though
         public delegate*<float> vf28; // get scroll amount (0.75)
         public delegate*<float> vf29; // get ??? (1)
@@ -76,7 +76,7 @@ namespace Cammy.Structures
         public delegate*<float> vf31; // duplicate of 28
         public delegate*<float> vf32; // duplicate of 28
 
-        public VirtualTable(IntPtr* address)
+        public VirtualTable(nint* address)
         {
             foreach (var f in GetType().GetFields())
             {

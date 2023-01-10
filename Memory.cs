@@ -9,16 +9,16 @@ namespace Cammy
     {
         public class Replacer : IDisposable
         {
-            public IntPtr Address { get; private set; } = IntPtr.Zero;
+            public nint Address { get; private set; } = nint.Zero;
             private readonly byte[] newBytes;
             private readonly byte[] oldBytes;
             public bool IsEnabled { get; private set; } = false;
-            public bool IsValid => Address != IntPtr.Zero;
+            public bool IsValid => Address != nint.Zero;
             public string ReadBytes => !IsValid ? string.Empty : oldBytes.Aggregate(string.Empty, (current, b) => current + (b.ToString("X2") + " "));
 
-            public Replacer(IntPtr addr, byte[] bytes, bool startEnabled = false)
+            public Replacer(nint addr, byte[] bytes, bool startEnabled = false)
             {
-                if (addr == IntPtr.Zero) return;
+                if (addr == nint.Zero) return;
 
                 Address = addr;
                 newBytes = bytes;
@@ -31,10 +31,10 @@ namespace Cammy
 
             public Replacer(string sig, byte[] bytes, bool startEnabled = false)
             {
-                var addr = IntPtr.Zero;
+                var addr = nint.Zero;
                 try { addr = DalamudApi.SigScanner.ScanModule(sig); }
                 catch { PluginLog.LogError($"Failed to find signature {sig}"); }
-                if (addr == IntPtr.Zero) return;
+                if (addr == nint.Zero) return;
 
                 Address = addr;
                 newBytes = bytes;

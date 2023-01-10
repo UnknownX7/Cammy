@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using Cammy.Structures;
 using Dalamud.Game.ClientState.Conditions;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -34,7 +35,7 @@ namespace Cammy
                 prevZoom = gameCamera->CurrentZoom;
 
                 if (isMainMenu)
-                    *(byte*)((IntPtr)gameCamera + 0x2A0) = 0;
+                    *(byte*)((nint)gameCamera + 0x2A0) = 0;
                 gameCamera->MinVRotation = -1.559f;
                 gameCamera->MaxVRotation = 1.559f;
                 gameCamera->CurrentFoV = gameCamera->MinFoV = gameCamera->MaxFoV = 0.78f;
@@ -81,7 +82,7 @@ namespace Cammy
             static void ToggleAddonVisible(string name)
             {
                 var addon = DalamudApi.GameGui.GetAddonByName(name, 1);
-                if (addon == IntPtr.Zero) return;
+                if (addon == nint.Zero) return;
                 ((AtkUnitBase*)addon)->IsVisible ^= true;
             }
 
@@ -127,7 +128,7 @@ namespace Cammy
 
             var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-            if (Game.IsInputIDPressed(367) || Game.IsInputIDPressed(35) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == IntPtr.Zero)) // Cycle through Enemies (Farthest to Nearest) / Controller Open Main Menu
+            if (Game.IsInputIDPressed(367) || Game.IsInputIDPressed(35) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title", 1) == nint.Zero)) // Cycle through Enemies (Farthest to Nearest) / Controller Open Main Menu
             {
                 Toggle();
                 return;
@@ -163,7 +164,7 @@ namespace Cammy
             if (Game.IsInputIDHeld(443) || Game.IsInputIDHeld(2)) // Descent / Controller Cancel
                 movePos.Z -= 1;
 
-            if (DalamudApi.KeyState[67] || Game.IsInputIDPressed(18)) // C / Controller Dismount (Autorun + Change Hotbar Set)
+            if ((DalamudApi.KeyState[67] && !Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.IsTextInputActive()) || Game.IsInputIDPressed(18)) // C / Controller Dismount (Autorun + Change Hotbar Set)
             {
                 DalamudApi.KeyState[67] = false;
                 speed = 1;

@@ -20,14 +20,14 @@ namespace Cammy
         private static float GetZoomDeltaDetour() => zoomDelta;
 
         // Of course this isn't though
-        private static IntPtr foVDeltaPtr;
+        private static nint foVDeltaPtr;
         public static ref float FoVDelta => ref *(float*)foVDeltaPtr; // 0.08726646751
 
         public static float cameraHeightOffset = 0;
         public static float cameraSideOffset = 0;
-        private delegate void GetCameraPositionDelegate(GameCamera* camera, IntPtr target, float* vectorPosition, bool swapPerson);
+        private delegate void GetCameraPositionDelegate(GameCamera* camera, nint target, float* vectorPosition, bool swapPerson);
         private static Hook<GetCameraPositionDelegate> GetCameraPositionHook;
-        private static void GetCameraPositionDetour(GameCamera* camera, IntPtr target, float* vectorPosition, bool swapPerson)
+        private static void GetCameraPositionDetour(GameCamera* camera, nint target, float* vectorPosition, bool swapPerson)
         {
             if (!FreeCam.Enabled)
             {
@@ -49,18 +49,18 @@ namespace Cammy
             }
         }
 
-        public delegate void SetCameraLookAtDelegate(IntPtr camera, float* lookAtPosition, float* cameraPosition, float* a4);
+        public delegate void SetCameraLookAtDelegate(nint camera, float* lookAtPosition, float* cameraPosition, float* a4);
         public static Hook<SetCameraLookAtDelegate> SetCameraLookAtHook;
-        private static void SetCameraLookAtDetour(IntPtr camera, float* lookAtPosition, float* cameraPosition, float* a4) // a4 seems to be immediately overwritten and unused
+        private static void SetCameraLookAtDetour(nint camera, float* lookAtPosition, float* cameraPosition, float* a4) // a4 seems to be immediately overwritten and unused
         {
             if (FreeCam.Enabled) return;
             SetCameraLookAtHook.Original(camera, lookAtPosition, cameraPosition, a4);
         }
 
         public static bool IsSpectating { get; private set; } = false;
-        public delegate IntPtr GetCameraTargetDelegate(IntPtr camera);
+        public delegate nint GetCameraTargetDelegate(nint camera);
         public static Hook<GetCameraTargetDelegate> GetCameraTargetHook;
-        private static IntPtr GetCameraTargetDetour(IntPtr camera)
+        private static nint GetCameraTargetDetour(nint camera)
         {
             if (EnableSpectating)
             {
@@ -92,37 +92,37 @@ namespace Cammy
         private static byte CanChangePerspectiveDetour() => (byte)(FreeCam.Enabled ? 0 : 1);
 
 
-        private delegate byte GetCameraAutoRotateModeDelegate(IntPtr camera, IntPtr framework);
+        private delegate byte GetCameraAutoRotateModeDelegate(nint camera, nint framework);
         private static Hook<GetCameraAutoRotateModeDelegate> GetCameraAutoRotateModeHook;
-        private static byte GetCameraAutoRotateModeDetour(IntPtr camera, IntPtr framework) => (byte)(FreeCam.Enabled || IsSpectating ? 4 : GetCameraAutoRotateModeHook.Original(camera, framework));
+        private static byte GetCameraAutoRotateModeDetour(nint camera, nint framework) => (byte)(FreeCam.Enabled || IsSpectating ? 4 : GetCameraAutoRotateModeHook.Original(camera, framework));
 
         public delegate float GetCameraMaxMaintainDistanceDelegate(GameCamera* camera);
         public static Hook<GetCameraMaxMaintainDistanceDelegate> GetCameraMaxMaintainDistanceHook;
         // The camera isn't even used in the function...
         private static float GetCameraMaxMaintainDistanceDetour(GameCamera* camera) => GetCameraMaxMaintainDistanceHook.Original(camera) is var ret && ret < 10f ? ret : camera->MaxZoom;
 
-        private static IntPtr inputData;
-        private static delegate* unmanaged<Framework*, IntPtr> getInputData;
+        private static nint inputData;
+        private static delegate* unmanaged<Framework*, nint> getInputData;
 
-        private static delegate* unmanaged<IntPtr, int, byte> isInputIDHeld;
+        private static delegate* unmanaged<nint, int, byte> isInputIDHeld;
         public static bool IsInputIDHeld(int i) => isInputIDHeld(inputData, i) != 0;
 
-        private static delegate* unmanaged<IntPtr, int, byte> isInputIDPressed;
+        private static delegate* unmanaged<nint, int, byte> isInputIDPressed;
         public static bool IsInputIDPressed(int i) => isInputIDPressed(inputData, i) != 0;
 
-        private static delegate* unmanaged<IntPtr, int, byte> isInputIDLongPressed;
+        private static delegate* unmanaged<nint, int, byte> isInputIDLongPressed;
         public static bool IsInputIDLongPressed(int i) => isInputIDLongPressed(inputData, i) != 0;
 
-        private static delegate* unmanaged<IntPtr, int, byte> isInputIDReleased;
+        private static delegate* unmanaged<nint, int, byte> isInputIDReleased;
         public static bool IsInputIDReleased(int i) => isInputIDReleased(inputData, i) != 0;
 
-        private static delegate* unmanaged<IntPtr, int, int> getAnalogInputID;
+        private static delegate* unmanaged<nint, int, int> getAnalogInputID;
         public static float GetAnalogInputID(int i) => getAnalogInputID(inputData, i) / 100f;
 
         private static delegate* unmanaged<sbyte> getMouseWheelStatus;
         public static sbyte GetMouseWheelStatus() => getMouseWheelStatus();
 
-        public static IntPtr forceDisableMovementPtr;
+        public static nint forceDisableMovementPtr;
         public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
         public static readonly Memory.Replacer cameraNoCollideReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
@@ -177,14 +177,14 @@ namespace Cammy
             GetCameraMaxMaintainDistanceHook.Enable();
 
             foVDeltaPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F"); // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
-            forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("48 83 EC 28 83 3D ?? ?? ?? ?? ?? 0F 87") + 1; // Why is this 1 off? (Also found at g_PlayerMoveController + 0x51C)
+            forceDisableMovementPtr = DalamudApi.SigScanner.GetStaticAddressFromSig("F3 0F 10 05 ?? ?? ?? ?? 0F 2E C6 0F 8A") + 4; // Also found at g_PlayerMoveController + 0x54C
 
-            getInputData = (delegate* unmanaged<Framework*, IntPtr>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
-            isInputIDHeld = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
-            isInputIDPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
-            isInputIDLongPressed = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 08 85 DB");
-            isInputIDReleased = (delegate* unmanaged<IntPtr, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 88 43 0F");
-            getAnalogInputID = (delegate* unmanaged<IntPtr, int, int>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 66 44 0F 6E C3");
+            getInputData = (delegate* unmanaged<Framework*, nint>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 80 BB A2 00 00 00 00");
+            isInputIDHeld = (delegate* unmanaged<nint, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? BA 4D 01 00 00");
+            isInputIDPressed = (delegate* unmanaged<nint, int, byte>)DalamudApi.SigScanner.ScanText("E9 ?? ?? ?? ?? 83 7F 44 02");
+            isInputIDLongPressed = (delegate* unmanaged<nint, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 08 85 DB");
+            isInputIDReleased = (delegate* unmanaged<nint, int, byte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 88 43 0F");
+            getAnalogInputID = (delegate* unmanaged<nint, int, int>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? 66 44 0F 6E C3");
             getMouseWheelStatus = (delegate* unmanaged<sbyte>)DalamudApi.SigScanner.ScanText("E8 ?? ?? ?? ?? F7 D8 48 8B CB");
             inputData = getInputData(Framework.Instance());
 

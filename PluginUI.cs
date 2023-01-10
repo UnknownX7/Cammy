@@ -14,7 +14,7 @@ namespace Cammy
 
         public static void Draw()
         {
-            if (!FreeCam.Enabled && DalamudApi.GameGui.GetAddonByName("Title", 1) != IntPtr.Zero)
+            if (!FreeCam.Enabled && DalamudApi.GameGui.GetAddonByName("Title", 1) != nint.Zero)
                 DrawFreeCamButton();
 
             if (!isVisible) return;
