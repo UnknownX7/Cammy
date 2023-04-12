@@ -1,66 +1,46 @@
 ﻿using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using Dalamud.Game;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 
-namespace Cammy
+namespace Cammy;
+
+public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 {
-    public class Cammy : IDalamudPlugin
+    public override string Name => "Cammy";
+
+    public Cammy(DalamudPluginInterface pluginInterface) : base(pluginInterface) { }
+
+    protected override void Initialize()
     {
-        public string Name => "Cammy";
-        public static Cammy Plugin { get; private set; }
-        public static Configuration Config { get; private set; }
+        Game.Initialize();
+        IPC.Initialize();
 
-        private readonly bool pluginReady = false;
+        DalamudApi.ClientState.Login += Login;
+        DalamudApi.ClientState.Logout += Logout;
+        DalamudApi.ClientState.TerritoryChanged += TerritoryChanged;
+    }
 
-        public Cammy(DalamudPluginInterface pluginInterface)
+    protected override void ToggleConfig() => PluginUI.IsVisible ^= true;
+
+    private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide | freecam ]";
+
+    [PluginCommand("/cammy", HelpMessage = "Opens / closes the config. Additional usage: " + cammySubcommands)]
+    private unsafe void ToggleConfig(string command, string argument)
+    {
+        if (string.IsNullOrEmpty(argument))
         {
-            try
-            {
-                Plugin = this;
-                DalamudApi.Initialize(this, pluginInterface);
-
-                Config = (Configuration)DalamudApi.PluginInterface.GetPluginConfig() ?? new();
-                Config.Initialize();
-
-                DalamudApi.Framework.Update += Update;
-                DalamudApi.ClientState.Login += Login;
-                DalamudApi.ClientState.Logout += Logout;
-                DalamudApi.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
-                DalamudApi.PluginInterface.UiBuilder.Draw += Draw;
-                DalamudApi.ClientState.TerritoryChanged += TerritoryChanged;
-
-                Game.Initialize();
-                IPC.Initialize();
-
-                pluginReady = true;
-            }
-            catch (Exception e) { PluginLog.LogError($"Failed loading plugin\n{e}"); }
+            ToggleConfig();
+            return;
         }
 
-        public void ToggleConfig() => PluginUI.isVisible ^= true;
+        var regex = Regex.Match(argument, "^(\\w+) ?(.*)");
+        var subcommand = regex.Success && regex.Groups.Count > 1 ? regex.Groups[1].Value : string.Empty;
 
-        private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide | freecam ]";
-
-        [Command("/cammy")]
-        [HelpMessage("Opens / closes the config. Additional usage: " + cammySubcommands)]
-        private unsafe void ToggleConfig(string command, string argument)
+        switch (subcommand.ToLower())
         {
-            if (string.IsNullOrEmpty(argument))
-            {
-                ToggleConfig();
-                return;
-            }
-
-            var regex = Regex.Match(argument, "^(\\w+) ?(.*)");
-            var subcommand = regex.Success && regex.Groups.Count > 1 ? regex.Groups[1].Value : string.Empty;
-
-            switch (subcommand.ToLower())
-            {
-                case "preset":
+            case "preset":
                 {
                     if (regex.Groups.Count < 2 || string.IsNullOrEmpty(regex.Groups[2].Value))
                     {
@@ -82,7 +62,7 @@ namespace Cammy
                     PrintEcho($"Preset set to \"{arg}\"");
                     break;
                 }
-                case "zoom":
+            case "zoom":
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
@@ -90,10 +70,10 @@ namespace Cammy
                         return;
                     }
 
-                    Game.cameraManager->WorldCamera->CurrentZoom = amount;
+                    Common.CameraManager->worldCamera->currentZoom = amount;
                     break;
                 }
-                case "fov":
+            case "fov":
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
@@ -101,27 +81,27 @@ namespace Cammy
                         return;
                     }
 
-                    Game.cameraManager->WorldCamera->CurrentFoV = amount;
+                    Common.CameraManager->worldCamera->currentFoV = amount;
                     break;
                 }
-                case "spectate":
+            case "spectate":
                 {
                     Game.EnableSpectating ^= true;
                     PrintEcho($"Spectating is now {(Game.EnableSpectating ? "enabled" : "disabled")}!");
                     break;
                 }
-                case "nocollide":
+            case "nocollide":
                 {
                     Game.cameraNoCollideReplacer.Toggle();
                     PrintEcho($"Camera collision is now {(Game.cameraNoCollideReplacer.IsEnabled ? "disabled" : "enabled")}!");
                     break;
                 }
-                case "freecam":
+            case "freecam":
                 {
                     FreeCam.Toggle();
                     break;
                 }
-                case "help":
+            case "help":
                 {
                     PrintEcho("Subcommands:" +
                         "\npreset <name> - Applies a preset to override automatic presets, specified by name. Use without a name to disable." +
@@ -132,94 +112,57 @@ namespace Cammy
                         "\nfreecam - Toggles the \"Free Cam\" option.");
                     break;
                 }
-                default:
+            default:
                 {
                     PrintError("Invalid usage: " + cammySubcommands);
                     break;
                 }
-            }
         }
-
-        public static void PrintEcho(string message) => DalamudApi.ChatGui.Print($"[Cammy] {message}");
-        public static void PrintError(string message) => DalamudApi.ChatGui.PrintError($"[Cammy] {message}");
-
-        private void Update(Framework framework)
-        {
-            if (!pluginReady) return;
-            Game.Update();
-            FreeCam.Update();
-            PresetManager.Update();
-        }
-
-        private void Draw()
-        {
-            if (!pluginReady) return;
-            PluginUI.Draw();
-        }
-
-        private void Login(object sender, EventArgs e)
-        {
-            if (!pluginReady) return;
-            Game.cachedDefaultLookAtHeight = null;
-        }
-
-        private void Logout(object sender, EventArgs e)
-        {
-            if (!pluginReady) return;
-            Game.cachedDefaultLookAtHeight = null;
-            Game.isLoggedIn = false;
-            PresetManager.DisableCameraPresets();
-        }
-
-        private void TerritoryChanged(object sender, ushort id)
-        {
-            if (!pluginReady) return;
-            Game.isChangingAreas = true;
-            Game.changingAreaDelay = 1;
-            PresetManager.DisableCameraPresets();
-        }
-        #region IDisposable Support
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposing) return;
-
-            IPC.Dispose();
-
-            Config.Save();
-            new CameraConfigPreset().Apply();
-
-            DalamudApi.Framework.Update -= Update;
-            DalamudApi.ClientState.Login -= Login;
-            DalamudApi.ClientState.Logout -= Logout;
-            DalamudApi.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
-            DalamudApi.PluginInterface.UiBuilder.Draw -= Draw;
-            DalamudApi.Dispose();
-
-            if (FreeCam.Enabled)
-                FreeCam.Toggle();
-
-            Game.Dispose();
-            Memory.Dispose();
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        #endregion
     }
 
-    public static class Extensions
+    protected override void Update(Framework framework)
     {
-        public static object Cast(this Type Type, object data)
-        {
-            var DataParam = Expression.Parameter(typeof(object), "data");
-            var Body = Expression.Block(Expression.Convert(Expression.Convert(DataParam, data.GetType()), Type));
+        Game.Update();
+        FreeCam.Update();
+        PresetManager.Update();
+    }
 
-            var Run = Expression.Lambda(Body, DataParam).Compile();
-            var ret = Run.DynamicInvoke(data);
-            return ret;
-        }
+    protected override void Draw()
+    {
+        PluginUI.Draw();
+    }
+
+    private void Login(object sender, EventArgs e)
+    {
+        Game.CachedDefaultLookAtHeight = null;
+    }
+
+    private void Logout(object sender, EventArgs e)
+    {
+        Game.CachedDefaultLookAtHeight = null;
+        Game.isLoggedIn = false;
+        PresetManager.DisableCameraPresets();
+    }
+
+    private void TerritoryChanged(object sender, ushort id)
+    {
+        Game.isChangingAreas = true;
+        Game.changingAreaDelay = 1;
+        PresetManager.DisableCameraPresets();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (!disposing) return;
+        IPC.Dispose();
+        new CameraConfigPreset().Apply();
+        DalamudApi.ClientState.Login -= Login;
+        DalamudApi.ClientState.Logout -= Logout;
+        DalamudApi.ClientState.TerritoryChanged -= TerritoryChanged;
+
+        if (FreeCam.Enabled)
+            FreeCam.Toggle();
+
+        Game.Dispose();
     }
 }
