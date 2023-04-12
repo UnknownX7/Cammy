@@ -34,12 +34,10 @@ public static unsafe class FreeCam
             onDeath = death;
             prevZoom = gameCamera->currentZoom;
 
-            if (isMainMenu)
-                *(byte*)((nint)gameCamera + 0x2A0) = 0;
             gameCamera->minVRotation = -1.559f;
             gameCamera->maxVRotation = 1.559f;
             gameCamera->minFoV = gameCamera->maxFoV = gameCamera->currentFoV;
-            gameCamera->currentZoom = gameCamera->minZoom = gameCamera->maxZoom = 0;
+            gameCamera->currentZoom = gameCamera->minZoom = gameCamera->maxZoom = 0.06f;
             Game.ZoomDelta = 0;
             gameCamera->mode = 1;
             Game.cameraNoCollideReplacer.Enable();
@@ -59,6 +57,10 @@ public static unsafe class FreeCam
                         "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
                         "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop");
                 }
+            }
+            else
+            {
+                gameCamera->lockPosition = 0;
             }
         }
         else
