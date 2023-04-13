@@ -124,20 +124,20 @@ public static class PluginUI
 
             ImGui.PushID(i);
 
-            var isActive = preset == PresetManager.activePreset;
-            var isOverride = preset == PresetManager.presetOverride;
+            var isActive = preset == PresetManager.ActivePreset;
+            var isOverride = preset == PresetManager.PresetOverride;
 
-            if (isActive)
+            if (isActive || isOverride)
                 ImGui.PushStyleColor(ImGuiCol.Text, !isOverride ? 0xFF00FF00 : 0xFFFFAF00);
 
             if (ImGui.Selectable(preset.Name, selectedPreset == i))
                 selectedPreset = i;
 
-            if (isActive)
+            if (isActive || isOverride)
                 ImGui.PopStyleColor();
 
             if (ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                PresetManager.SetPresetOverride(!isOverride ? preset : null);
+                PresetManager.CurrentPreset = !isOverride ? preset : null;
 
             ImGui.PopID();
         }
@@ -169,7 +169,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.activePreset)
+        if (CurrentPreset == PresetManager.ActivePreset)
             CurrentPreset.Apply();
     }
 
@@ -197,7 +197,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.activePreset)
+        if (CurrentPreset == PresetManager.ActivePreset)
             CurrentPreset.Apply();
     }
 
@@ -218,7 +218,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.activePreset)
+        if (CurrentPreset == PresetManager.ActivePreset)
             CurrentPreset.Apply();
     }
 

@@ -1,45 +1,74 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace Cammy;
 
 public static class PresetManager
 {
-    public static CameraConfigPreset activePreset;
-    public static CameraConfigPreset presetOverride;
+    public static CameraConfigPreset CurrentPreset
+    {
+        get => PresetOverride ?? ActivePreset ?? DefaultPreset;
+        set
+        {
+            ApplyPreset(PresetOverride = value);
+            if (value == null)
+                ActivePreset = null;
+        }
+    }
+
+    public static CameraConfigPreset DefaultPreset { get; } = new();
+
+    public static CameraConfigPreset ActivePreset { get; private set; }
+
+    public static CameraConfigPreset PresetOverride { get; private set; }
+
+    public static unsafe void ApplyPreset(CameraConfigPreset preset)
+    {
+        if (preset == null) return;
+
+        var camera = Common.CameraManager->worldCamera;
+        if (camera == null) return;
+
+        if (preset.UseStartZoom && (!preset.UseStartOnLogin || Game.onLogin))
+            camera->currentZoom = preset.StartZoom;
+        else
+            camera->currentZoom = Math.Min(Math.Max(camera->currentZoom, preset.MinZoom), preset.MaxZoom);
+        camera->minZoom = preset.MinZoom;
+        camera->maxZoom = preset.MaxZoom;
+
+        if (preset.UseStartFoV && (!preset.UseStartOnLogin || Game.onLogin))
+            camera->currentFoV = preset.StartFoV;
+        else
+            camera->currentFoV = Math.Min(Math.Max(camera->currentFoV, preset.MinFoV), preset.MaxFoV);
+        camera->minFoV = preset.MinFoV;
+        camera->maxFoV = preset.MaxFoV;
+        Game.FoVDelta = preset.FoVDelta;
+
+        camera->minVRotation = preset.MinVRotation;
+        camera->maxVRotation = preset.MaxVRotation;
+
+        camera->tilt = preset.Tilt;
+        camera->lookAtHeightOffset = preset.LookAtHeightOffset;
+    }
 
     public static void CheckCameraConditionSets()
     {
         var preset = Cammy.Config.Presets.FirstOrDefault(preset => preset.CheckConditionSet());
-        if (preset == null || preset == activePreset) return;
+        if (preset == null || preset == ActivePreset) return;
 
-        DisableCameraPresets();
-        preset.Apply();
-        activePreset = preset;
-    }
-
-    public static void DisableCameraPresets()
-    {
-        activePreset = null;
-    }
-
-    public static void SetPresetOverride(CameraConfigPreset preset)
-    {
-        DisableCameraPresets();
-        presetOverride = preset;
+        ApplyPreset(preset);
+        ActivePreset = preset;
     }
 
     public static void Update()
     {
-        if (!Game.isLoggedIn || Game.isChangingAreas || FreeCam.Enabled) return;
-
-        if (presetOverride != null)
-        {
-            if (activePreset != null) return;
-            activePreset = presetOverride;
-            activePreset.Apply();
-            return;
-        }
-
+        if (!Game.isLoggedIn || Game.isChangingAreas || FreeCam.Enabled || PresetOverride != null) return;
         CheckCameraConditionSets();
+    }
+
+    public static void DisableCameraPresets()
+    {
+        ActivePreset = null;
+        PresetOverride = null;
     }
 }

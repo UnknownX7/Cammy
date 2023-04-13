@@ -35,35 +35,7 @@ public class CameraConfigPreset
 
     public bool CheckConditionSet() => ConditionSet < 0 || IPC.QoLBarEnabled && IPC.CheckConditionSet(ConditionSet);
 
-    public unsafe void Apply()
-    {
-        var camera = Common.CameraManager->worldCamera;
-        if (camera == null) return;
-
-        if (UseStartZoom && (!UseStartOnLogin || Game.onLogin))
-            camera->currentZoom = StartZoom;
-        else
-            camera->currentZoom = Math.Min(Math.Max(camera->currentZoom, MinZoom), MaxZoom);
-        camera->minZoom = MinZoom;
-        camera->maxZoom = MaxZoom;
-        Game.ZoomDelta = ZoomDelta;
-
-        if (UseStartFoV && (!UseStartOnLogin || Game.onLogin))
-            camera->currentFoV = StartFoV;
-        else
-            camera->currentFoV = Math.Min(Math.Max(camera->currentFoV, MinFoV), MaxFoV);
-        camera->minFoV = MinFoV;
-        camera->maxFoV = MaxFoV;
-        Game.FoVDelta = FoVDelta;
-
-        camera->minVRotation = MinVRotation;
-        camera->maxVRotation = MaxVRotation;
-
-        Game.CameraHeightOffset = HeightOffset;
-        Game.CameraSideOffset = SideOffset;
-        camera->tilt = Tilt;
-        camera->lookAtHeightOffset = LookAtHeightOffset;
-    }
+    public void Apply() => PresetManager.ApplyPreset(this);
 }
 
 public class Configuration : PluginConfiguration<Configuration>, IPluginConfiguration

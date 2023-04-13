@@ -13,9 +13,7 @@ public static unsafe class Game
     public static bool EnableSpectating { get; set; } = false;
     public static float? CachedDefaultLookAtHeight { get; set; }
 
-    // This variable is merged with a lot of other constants so it's not possible to change normally
-    public static float ZoomDelta { get; set; } = 0.75f;
-    private static float GetZoomDeltaDetour() => ZoomDelta;
+    private static float GetZoomDeltaDetour() => PresetManager.CurrentPreset.ZoomDelta;
 
     // Of course this isn't though
     [HypostasisSignatureInjection("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F", Static = true, Required = true)] // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
@@ -36,21 +34,21 @@ public static unsafe class Game
         camera->VTable.setCameraLookAt.Original(camera, lookAtPosition, cameraPosition, a4);
     }
 
-    public static float CameraHeightOffset { get; set; }
-    public static float CameraSideOffset { get; set; }
     private static void GetCameraPositionDetour(GameCamera* camera, GameObject* target, Vector3* position, Bool swapPerson)
     {
         if (!FreeCam.Enabled)
         {
             camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
-            position->Y += CameraHeightOffset;
 
-            if (CameraSideOffset == 0 || camera->mode != 1) return;
+            var preset = PresetManager.CurrentPreset;
+            position->Y += preset.HeightOffset;
+
+            if (preset.SideOffset == 0 || camera->mode != 1) return;
 
             const float halfPI = MathF.PI / 2f;
             var a = Common.CameraManager->worldCamera->currentHRotation - halfPI;
-            position->X += -CameraSideOffset * MathF.Sin(a);
-            position->Z += -CameraSideOffset * MathF.Cos(a);
+            position->X += -preset.SideOffset * MathF.Sin(a);
+            position->Z += -preset.SideOffset * MathF.Cos(a);
         }
         else
         {
@@ -126,7 +124,7 @@ public static unsafe class Game
     public static void Initialize()
     {
         if (Common.CameraManager == null || !Common.IsValid(Common.CameraManager->worldCamera) || !Common.IsValid(Common.InputData))
-            throw new ApplicationException("CameraManager is not initialized!");
+            throw new ApplicationException("Failed to validate core structures!");
 
         var vtbl = Common.CameraManager->worldCamera->VTable;
         vtbl.setCameraLookAt.CreateHook(SetCameraLookAtDetour);

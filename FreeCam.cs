@@ -19,6 +19,18 @@ public static unsafe class FreeCam
     private static bool onDeath = false;
     private static bool onDeathActivated = false;
     private static float prevZoom = 0;
+    private static float prevFoV = 0;
+
+    private static readonly CameraConfigPreset freeCamPreset = new()
+    {
+        MinVRotation = -1.559f,
+        MaxVRotation = 1.559f,
+        MinZoom = 0.06f,
+        MaxZoom = 0.06f,
+        UseStartZoom = true,
+        StartZoom = 0.06f,
+        ZoomDelta = 0
+    };
 
     public static void Toggle(bool death = false)
     {
@@ -33,12 +45,10 @@ public static unsafe class FreeCam
             position = new(gameCamera->viewX, gameCamera->viewY, gameCamera->viewZ);
             onDeath = death;
             prevZoom = gameCamera->currentZoom;
+            prevFoV = gameCamera->currentFoV;
 
-            gameCamera->minVRotation = -1.559f;
-            gameCamera->maxVRotation = 1.559f;
-            gameCamera->minFoV = gameCamera->maxFoV = gameCamera->currentFoV;
-            gameCamera->currentZoom = gameCamera->minZoom = gameCamera->maxZoom = 0.06f;
-            Game.ZoomDelta = 0;
+            freeCamPreset.MinFoV = freeCamPreset.MaxFoV = gameCamera->currentFoV;
+            freeCamPreset.Apply();
             gameCamera->mode = 1;
             Game.cameraNoCollideReplacer.Enable();
 
@@ -69,11 +79,12 @@ public static unsafe class FreeCam
             {
                 if (!locked && Game.ForceDisableMovement > 0)
                     Game.ForceDisableMovement--;
-                new CameraConfigPreset().Apply();
+                PresetManager.DefaultPreset.Apply();
                 PresetManager.DisableCameraPresets();
             }
 
             gameCamera->currentZoom = gameCamera->interpolatedZoom = prevZoom;
+            gameCamera->currentFoV = prevFoV;
             gameCamera = null;
             Game.cameraNoCollideReplacer.Disable();
         }

@@ -43,7 +43,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 {
                     if (regex.Groups.Count < 2 || string.IsNullOrEmpty(regex.Groups[2].Value))
                     {
-                        PresetManager.SetPresetOverride(null);
+                        PresetManager.CurrentPreset = null;
                         PrintEcho("Removed preset override.");
                         return;
                     }
@@ -57,7 +57,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                         return;
                     }
 
-                    PresetManager.SetPresetOverride(preset);
+                    PresetManager.CurrentPreset = preset;
                     PrintEcho($"Preset set to \"{arg}\"");
                     break;
                 }
@@ -148,7 +148,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
     {
         if (!disposing) return;
         IPC.Dispose();
-        new CameraConfigPreset().Apply();
+        PresetManager.DefaultPreset.Apply();
         DalamudApi.ClientState.Login -= Login;
         DalamudApi.ClientState.Logout -= Logout;
         DalamudApi.ClientState.TerritoryChanged -= TerritoryChanged;
