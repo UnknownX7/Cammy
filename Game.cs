@@ -125,7 +125,7 @@ public static unsafe class Game
 
     public static void Initialize()
     {
-        if (Common.CameraManager == null || Common.CameraManager->worldCamera == null || Common.InputData == null)
+        if (Common.CameraManager == null || !Common.IsValid(Common.CameraManager->worldCamera) || !Common.IsValid(Common.InputData))
             throw new ApplicationException("CameraManager is not initialized!");
 
         var vtbl = Common.CameraManager->worldCamera->VTable;

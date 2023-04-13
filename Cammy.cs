@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Dalamud.Game;
 using Dalamud.Plugin;
 
 namespace Cammy;
@@ -120,22 +119,16 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
         }
     }
 
-    protected override void Update(Framework framework)
+    protected override void Update()
     {
         Game.Update();
         FreeCam.Update();
         PresetManager.Update();
     }
 
-    protected override void Draw()
-    {
-        PluginUI.Draw();
-    }
+    protected override void Draw() => PluginUI.Draw();
 
-    private void Login(object sender, EventArgs e)
-    {
-        Game.CachedDefaultLookAtHeight = null;
-    }
+    private void Login(object sender, EventArgs e) => Game.CachedDefaultLookAtHeight = null;
 
     private void Logout(object sender, EventArgs e)
     {
