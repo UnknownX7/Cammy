@@ -61,7 +61,7 @@ public static unsafe class FreeCam
             freeCamPreset.MinFoV = freeCamPreset.MaxFoV = gameCamera->currentFoV;
             freeCamPreset.Apply();
             gameCamera->mode = 1;
-            Game.cameraNoCollideReplacer.Enable();
+            Game.cameraNoClippyReplacer.Enable();
 
             if (!isMainMenu)
             {
@@ -91,7 +91,8 @@ public static unsafe class FreeCam
             gameCamera->currentZoom = gameCamera->interpolatedZoom = prevZoom;
             gameCamera->currentFoV = prevFoV;
             gameCamera = null;
-            Game.cameraNoCollideReplacer.Disable();
+            if (!Cammy.Config.EnableCameraNoClippy)
+                Game.cameraNoClippyReplacer.Disable();
         }
 
         if (!isMainMenu) return;

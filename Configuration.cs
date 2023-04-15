@@ -42,5 +42,6 @@ public class CameraConfigPreset
 public class Configuration : PluginConfiguration<Configuration>, IPluginConfiguration
 {
     public List<CameraConfigPreset> Presets = new();
+    public bool EnableCameraNoClippy = false;
     public int DeathCamMode = 0;
 }

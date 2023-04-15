@@ -88,8 +88,11 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 }
             case "nocollide":
                 {
-                    Game.cameraNoCollideReplacer.Toggle();
-                    PrintEcho($"Camera collision is now {(Game.cameraNoCollideReplacer.IsEnabled ? "disabled" : "enabled")}!");
+                    Config.EnableCameraNoClippy ^= true;
+                    if (!FreeCam.Enabled)
+                        Game.cameraNoClippyReplacer.Toggle();
+                    Config.Save();
+                    PrintEcho($"Camera collision is now {(Config.EnableCameraNoClippy ? "disabled" : "enabled")}!");
                     break;
                 }
             case "freecam":

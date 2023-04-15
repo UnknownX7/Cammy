@@ -371,12 +371,15 @@ public static class PluginUI
             ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
         }
 
-        if (Game.cameraNoCollideReplacer.IsValid)
+        if (Game.cameraNoClippyReplacer.IsValid)
         {
             ImGui.NextColumn();
-            var _ = Game.cameraNoCollideReplacer.IsEnabled;
-            if (ImGui.Checkbox("Disable Camera Collision", ref _))
-                Game.cameraNoCollideReplacer.Toggle();
+            if (ImGui.Checkbox("Disable Camera Collision", ref Cammy.Config.EnableCameraNoClippy))
+            {
+                if (!FreeCam.Enabled)
+                    Game.cameraNoClippyReplacer.Toggle();
+                Cammy.Config.Save();
+            }
         }
 
         ImGui.Columns(1);
