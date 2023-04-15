@@ -29,6 +29,7 @@ public class CameraConfigPreset
     public float SideOffset = 0;
     public float Tilt = 0;
     public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset();
+    public bool EnableViewBobbing = false;
     public int ConditionSet = -1;
 
     public CameraConfigPreset Clone() => (CameraConfigPreset)MemberwiseClone();

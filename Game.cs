@@ -37,9 +37,14 @@ public static unsafe class Game
     {
         if (!FreeCam.Enabled)
         {
-            camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
-
             var preset = PresetManager.CurrentPreset;
+
+            var cameraTarget = GetCameraTargetDetour(camera);
+            if (preset.EnableViewBobbing && Common.getLocalBonePosition.IsValid && cameraTarget != null && cameraTarget->DrawObject != null && Common.GetLocalBonePosition(cameraTarget, 26) is var offset && offset != Vector3.Zero)
+                *position = offset + (Vector3)cameraTarget->DrawObject->Object.Position;
+            else
+                camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
+
             position->Y += preset.HeightOffset;
 
             if (preset.SideOffset == 0 || camera->mode != 1) return;

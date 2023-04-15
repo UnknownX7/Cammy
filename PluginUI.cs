@@ -21,7 +21,7 @@ public static class PluginUI
     {
         if (!isVisible) return;
 
-        ImGui.SetNextWindowSizeConstraints(new Vector2(700, 685) * ImGuiHelpers.GlobalScale, new Vector2(9999));
+        ImGui.SetNextWindowSizeConstraints(new Vector2(700, 710) * ImGuiHelpers.GlobalScale, new Vector2(9999));
         ImGui.Begin("Cammy Configuration", ref isVisible);
 
         if (ImGui.BeginTabBar("CammyTabs"))
@@ -299,6 +299,9 @@ public static class PluginUI
         ResetSliderFloat("Camera Side Offset", ref preset.SideOffset, -1, 1, 0, "%.2f");
         ResetSliderFloat("Tilt", ref preset.Tilt, -MathF.PI, MathF.PI, 0, "%f");
         ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, Game.GetDefaultLookAtHeightOffset, "%f");
+
+        if (ImGui.Checkbox("View Bobbing", ref preset.EnableViewBobbing))
+            Cammy.Config.Save();
 
         ImGui.Spacing();
         ImGui.Separator();
