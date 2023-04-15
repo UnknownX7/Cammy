@@ -47,7 +47,7 @@ public static class PresetManager
         camera->minVRotation = preset.MinVRotation;
         camera->maxVRotation = preset.MaxVRotation;
 
-        camera->tilt = preset.Tilt;
+        //camera->tilt = preset.Tilt;
         camera->lookAtHeightOffset = preset.LookAtHeightOffset;
     }
 
