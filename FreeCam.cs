@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Hypostasis.Game.Structures;
 using ImGuiNET;
@@ -9,6 +10,15 @@ namespace Cammy;
 
 public static unsafe class FreeCam
 {
+    public const string ControlsString = "Additional Controls:" +
+        //"\nMove Keybinds - Move," +
+        //"\nJump / Ascend - Up," +
+        //"\nDescend - Down," +
+        "\nShift (Hold) - Speed up" +
+        "\nZoom / Controller Zoom (Autorun + Look Up / Down) - Change Speed" +
+        "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
+        "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop";
+
     public static bool Enabled => gameCamera != null;
     public static Vector3 Position => position;
 
@@ -20,6 +30,7 @@ public static unsafe class FreeCam
     private static bool onDeathActivated = false;
     private static float prevZoom = 0;
     private static float prevFoV = 0;
+    private static bool displayedControls = false;
 
     private static readonly CameraConfigPreset freeCamPreset = new()
     {
@@ -56,16 +67,10 @@ public static unsafe class FreeCam
             {
                 Game.ForceDisableMovement++;
 
-                if (!death)
+                if (!death && !displayedControls)
                 {
-                    Cammy.PrintEcho("Additional Controls:" +
-                        //"\nMove Keybinds - Move," +
-                        //"\nJump / Ascend - Up," +
-                        //"\nDescend - Down," +
-                        "\nShift (Hold) - Speed up" +
-                        "\nZoom / Controller Zoom (Autorun + Look Up / Down) - Change Speed" +
-                        "\nCycle through Enemies (Nearest to Farthest) / Controller Select HUD - Lock" +
-                        "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop");
+                    Cammy.ShowNotification(ControlsString, NotificationType.Info, 10_000);
+                    displayedControls = true;
                 }
             }
             else

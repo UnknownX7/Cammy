@@ -368,6 +368,7 @@ public static class PluginUI
             var _ = FreeCam.Enabled;
             if (ImGui.Checkbox("Free Cam", ref _))
                 FreeCam.Toggle();
+            ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
         }
 
         if (Game.cameraNoCollideReplacer.IsValid)
