@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Internal.Notifications;
@@ -32,6 +33,46 @@ public static unsafe class FreeCam
     private static float prevFoV = 0;
     private static bool displayedControls = false;
 
+    private enum FreeCamBindings
+    {
+        Forward,
+        Backward,
+        Left,
+        Left2,
+        Right,
+        Right2,
+        Ascend,
+        Ascend2,
+        Descend,
+        ToggleLock,
+        EndFreeCam,
+        ControllerAscend,
+        ControllerDescend,
+        ControllerToggleLock,
+        ControllerAdjustSpeedModifier,
+        ControllerEndFreeCam
+    }
+
+    private static readonly Dictionary<FreeCamBindings, uint> keybindings = new()
+    {
+        [FreeCamBindings.Forward] = 321, // Move Forward
+        [FreeCamBindings.Backward] = 322, // Move Back
+        [FreeCamBindings.Left] = 323,  // Move
+        [FreeCamBindings.Left2] = 325, // Strafe Left
+        [FreeCamBindings.Right] = 324, // Move
+        [FreeCamBindings.Right2] = 326, // Strafe Right
+        [FreeCamBindings.Ascend] = 348, // Jump
+        [FreeCamBindings.Ascend2] = 444, // Ascend
+        [FreeCamBindings.Descend] = 443, // Descent
+        [FreeCamBindings.ToggleLock] = 366, // Cycle through Enemies (Nearest to Farthest)
+        [FreeCamBindings.EndFreeCam] = 367, // Cycle through Enemies (Farthest to Nearest)
+        [FreeCamBindings.ControllerAscend] = 5, // Controller Jump
+        [FreeCamBindings.ControllerDescend] = 2, // Controller Cancel
+        [FreeCamBindings.ControllerAdjustSpeedModifier] = 17, // Controller Autorun
+        [FreeCamBindings.ControllerToggleLock] = 433, // Controller Select HUD
+        [FreeCamBindings.ControllerEndFreeCam] = 35 // Controller Open Main Menu
+    };
+
     private static readonly CameraConfigPreset freeCamPreset = new()
     {
         MinVRotation = -1.559f,
@@ -49,6 +90,8 @@ public static unsafe class FreeCam
         var isMainMenu = !DalamudApi.Condition.Any();
         if (enable)
         {
+            EnableInputBlockers();
+
             gameCamera = isMainMenu ? Common.CameraManager->menuCamera : Common.CameraManager->worldCamera;
 
             locked = false;
@@ -80,6 +123,8 @@ public static unsafe class FreeCam
         }
         else
         {
+            DisableInputBlockers();
+
             if (!isMainMenu)
             {
                 if (!locked && Game.ForceDisableMovement > 0)
@@ -135,18 +180,23 @@ public static unsafe class FreeCam
 
         if (!Enabled) return;
 
-        if (Common.InputData->IsInputIDPressed(366) || Common.InputData->IsInputIDReleased(433)) // Cycle through Enemies (Nearest to Farthest) / Controller Select HUD
+        if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ToggleLock]) || InputData.isInputIDReleased.Original(Common.InputData, keybindings[FreeCamBindings.ControllerToggleLock]))
         {
             locked ^= true;
             if (locked && Game.ForceDisableMovement > 0)
                 Game.ForceDisableMovement--;
             else
                 Game.ForceDisableMovement++;
+
+            if (locked)
+                DisableInputBlockers();
+            else
+                EnableInputBlockers();
         }
 
         var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-        if (Common.InputData->IsInputIDPressed(367) || Common.InputData->IsInputIDPressed(35) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title") == nint.Zero)) // Cycle through Enemies (Farthest to Nearest) / Controller Open Main Menu
+        if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.EndFreeCam]) || InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ControllerEndFreeCam]) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title") == nint.Zero))
         {
             Toggle();
             return;
@@ -156,39 +206,39 @@ public static unsafe class FreeCam
 
         var movePos = Vector3.Zero;
 
-        var analogInputX = Common.InputData->GetAxisInputFloat(4); // Controller Move Forward / Back
+        var analogInputX = InputData.getAxisInput.Original(Common.InputData, 4) / 100f; // Controller Move Forward / Back
         if (analogInputX != 0)
             movePos.X = analogInputX;
 
-        var analogInputY = Common.InputData->GetAxisInputFloat(3); // Controller Move Left / Right
-        if (analogInputY != 0)
-            movePos.Z = -analogInputY;
+        var analogInputZ = InputData.getAxisInput.Original(Common.InputData, 3) / 100f; // Controller Move Left / Right
+        if (analogInputZ != 0)
+            movePos.Z = -analogInputZ;
 
-        if (Common.InputData->IsInputIDHeld(321) || Common.InputData->IsInputIDHeld(36) && Common.InputData->IsInputIDHeld(37)) // Move Forward / Left + Right Click
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Forward]) || InputData.isInputIDHeld.Original(Common.InputData, 36) && InputData.isInputIDHeld.Original(Common.InputData, 37)) // Left + Right Click
             movePos.X += 1;
 
-        if (Common.InputData->IsInputIDHeld(322)) // Move Back
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Backward]))
             movePos.X -= 1;
 
-        if (Common.InputData->IsInputIDHeld(323) || Common.InputData->IsInputIDHeld(325)) // Move / Strafe Left
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Left]) || InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Left2]))
             movePos.Z += 1;
 
-        if (Common.InputData->IsInputIDHeld(324) || Common.InputData->IsInputIDHeld(326)) // Move / Strafe Right
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Right]) || InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Right2]))
             movePos.Z -= 1;
 
-        if (Common.InputData->IsInputIDHeld(348) || Common.InputData->IsInputIDHeld(444) || Common.InputData->IsInputIDHeld(5)) // Jump / Ascend / Controller Jump
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Ascend]) || InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Ascend2]) || InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.ControllerAscend]))
             movePos.Y += 1;
 
-        if (Common.InputData->IsInputIDHeld(443) || Common.InputData->IsInputIDHeld(2)) // Descent / Controller Cancel
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.Descend]) || InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.ControllerDescend]))
             movePos.Y -= 1;
 
         var mouseWheelStatus = InputData.GetMouseWheelStatus();
         if (mouseWheelStatus != 0)
             speed *= 1 + 0.2f * mouseWheelStatus;
 
-        if (Common.InputData->IsInputIDHeld(17)) // Controller Autorun
+        if (InputData.isInputIDHeld.Original(Common.InputData, keybindings[FreeCamBindings.ControllerAdjustSpeedModifier]))
         {
-            switch (Common.InputData->GetAxisInputFloat(6)) // Controller Move Camera Up / Down
+            switch (InputData.getAxisInput.Original(Common.InputData, 6) / 100f) // Controller Move Camera Up / Down
             {
                 case >= 0.6f:
                     speed *= 1 + 1.5f * (float)DalamudApi.Framework.UpdateDelta.TotalSeconds;
@@ -228,4 +278,43 @@ public static unsafe class FreeCam
             gameCamera->lookAtZ += z;
         }
     }
+
+    private static void EnableInputBlockers()
+    {
+        if (!InputData.isInputIDHeld.IsHooked)
+            InputData.isInputIDHeld.CreateHook(IsInputIDHeldDetour);
+        InputData.isInputIDHeld.Hook.Enable();
+
+        if (!InputData.isInputIDPressed.IsHooked)
+            InputData.isInputIDPressed.CreateHook(IsInputIDPressedDetour);
+        InputData.isInputIDPressed.Hook.Enable();
+
+        if (!InputData.isInputIDLongPressed.IsHooked)
+            InputData.isInputIDLongPressed.CreateHook(IsInputIDLongPressedDetour);
+        InputData.isInputIDLongPressed.Hook.Enable();
+
+        if (!InputData.isInputIDReleased.IsHooked)
+            InputData.isInputIDReleased.CreateHook(IsInputIDReleasedDetour);
+        InputData.isInputIDReleased.Hook.Enable();
+
+        if (!InputData.getAxisInput.IsHooked)
+            InputData.getAxisInput.CreateHook(GetAxisInputDetour);
+        InputData.getAxisInput.Hook.Enable();
+    }
+
+    private static void DisableInputBlockers()
+    {
+        InputData.isInputIDHeld.Hook.Disable();
+        InputData.isInputIDPressed.Hook.Disable();
+        InputData.isInputIDLongPressed.Hook.Disable();
+        InputData.isInputIDReleased.Hook.Disable();
+        InputData.getAxisInput.Hook.Disable();
+    }
+
+    // Obnoxious
+    private static Bool IsInputIDHeldDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDHeld.Original(inputData, inputID);
+    private static Bool IsInputIDPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDPressed.Original(inputData, inputID);
+    private static Bool IsInputIDLongPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDLongPressed.Original(inputData, inputID);
+    private static Bool IsInputIDReleasedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDReleased.Original(inputData, inputID);
+    private static int GetAxisInputDetour(InputData* inputData, uint inputID) => inputID is not (3 or 4 or 6) ? InputData.getAxisInput.Original(inputData, inputID) : 0;
 }
