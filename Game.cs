@@ -11,7 +11,6 @@ namespace Cammy;
 public static unsafe class Game
 {
     public static bool EnableSpectating { get; set; } = false;
-    public static float? CachedDefaultLookAtHeight { get; set; }
 
     private static float GetZoomDeltaDetour() => PresetManager.CurrentPreset.ZoomDelta;
 
@@ -98,26 +97,23 @@ public static unsafe class Game
 
     private static AsmPatch addMidHookReplacer;
 
-    public static bool isLoggedIn = false;
-    public static bool onLogin = false;
-    public static int changingAreaDelay = 0;
-    public static bool isChangingAreas = false;
-
-    // Very optimized very good
     public static float GetDefaultLookAtHeightOffset()
     {
-        if (CachedDefaultLookAtHeight.HasValue)
-            return CachedDefaultLookAtHeight.Value;
-
         var worldCamera = Common.CameraManager->worldCamera;
-        if (worldCamera == null) return 0;
+        if (worldCamera == null || DalamudApi.ClientState.LocalPlayer is not { } p) return 0;
 
         var prev = worldCamera->lookAtHeightOffset;
-        worldCamera->resetLookatHeightOffset = 1;
-        ((delegate* unmanaged<GameCamera*, void>)worldCamera->vtbl[3])(worldCamera);
+        GameCamera.updateLookAtHeightOffset.Original(worldCamera, (GameObject*)p.Address, false);
         var ret = worldCamera->lookAtHeightOffset;
         worldCamera->lookAtHeightOffset = prev;
-        CachedDefaultLookAtHeight = ret;
+        return ret;
+    }
+
+    public static Bool UpdateLookAtHeightOffsetDetour(GameCamera* camera, GameObject* o, Bool zero)
+    {
+        var ret = GameCamera.updateLookAtHeightOffset.Original(camera, o, zero);
+        if (ret && !zero && (nint)o == DalamudApi.ClientState.LocalPlayer?.Address)
+            camera->lookAtHeightOffset = PresetManager.CurrentPreset.LookAtHeightOffset;
         return ret;
     }
 
@@ -135,6 +131,7 @@ public static unsafe class Game
 
         GameCamera.getCameraAutoRotateMode.CreateHook(GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
         GameCamera.getCameraMaxMaintainDistance.CreateHook(GetCameraMaxMaintainDistanceDetour); // Found 1 function deep inside Client__Game__Camera_vf3
+        GameCamera.updateLookAtHeightOffset.CreateHook(UpdateLookAtHeightOffsetDetour);
 
         // Gross workaround for fixing legacy control's maintain distance
         var address = DalamudApi.SigScanner.ScanModule("48 85 C9 74 24 48 83 C1 10");
@@ -151,18 +148,6 @@ public static unsafe class Game
                     0x90, 0x90, 0x90, 0x90
             },
             true);
-    }
-
-    public static void Update()
-    {
-        if (onLogin)
-            onLogin = false;
-
-        if (!isLoggedIn)
-            onLogin = isLoggedIn = DalamudApi.ClientState.IsLoggedIn && !DalamudApi.Condition[ConditionFlag.BetweenAreas];
-
-        if (isChangingAreas && !DalamudApi.Condition[ConditionFlag.BetweenAreas] && --changingAreaDelay == 0)
-            isChangingAreas = false;
     }
 
     public static void Dispose() { }

@@ -169,7 +169,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.ActivePreset)
+        if (CurrentPreset == PresetManager.CurrentPreset)
             CurrentPreset.Apply();
     }
 
@@ -197,7 +197,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.ActivePreset)
+        if (CurrentPreset == PresetManager.CurrentPreset)
             CurrentPreset.Apply();
     }
 
@@ -218,7 +218,7 @@ public static class PluginUI
 
         if (!save) return;
         Cammy.Config.Save();
-        if (CurrentPreset == PresetManager.ActivePreset)
+        if (CurrentPreset == PresetManager.CurrentPreset)
             CurrentPreset.Apply();
     }
 

@@ -22,21 +22,21 @@ public static class PresetManager
 
     public static CameraConfigPreset PresetOverride { get; private set; }
 
-    public static unsafe void ApplyPreset(CameraConfigPreset preset)
+    public static unsafe void ApplyPreset(CameraConfigPreset preset, bool isLoggingIn = false)
     {
         if (preset == null) return;
 
         var camera = Common.CameraManager->worldCamera;
         if (camera == null) return;
 
-        if (preset.UseStartZoom && (!preset.UseStartOnLogin || Game.onLogin))
+        if (preset.UseStartZoom && (!preset.UseStartOnLogin || isLoggingIn))
             camera->currentZoom = preset.StartZoom;
         else
             camera->currentZoom = Math.Min(Math.Max(camera->currentZoom, preset.MinZoom), preset.MaxZoom);
         camera->minZoom = preset.MinZoom;
         camera->maxZoom = preset.MaxZoom;
 
-        if (preset.UseStartFoV && (!preset.UseStartOnLogin || Game.onLogin))
+        if (preset.UseStartFoV && (!preset.UseStartOnLogin || isLoggingIn))
             camera->currentFoV = preset.StartFoV;
         else
             camera->currentFoV = Math.Min(Math.Max(camera->currentFoV, preset.MinFoV), preset.MaxFoV);
@@ -51,19 +51,19 @@ public static class PresetManager
         camera->lookAtHeightOffset = preset.LookAtHeightOffset;
     }
 
-    public static void CheckCameraConditionSets()
+    public static void CheckCameraConditionSets(bool isLoggingIn)
     {
         var preset = Cammy.Config.Presets.FirstOrDefault(preset => preset.CheckConditionSet());
         if (preset == null || preset == ActivePreset) return;
 
-        ApplyPreset(preset);
+        ApplyPreset(preset, isLoggingIn);
         ActivePreset = preset;
     }
 
     public static void Update()
     {
-        if (!Game.isLoggedIn || Game.isChangingAreas || FreeCam.Enabled || PresetOverride != null) return;
-        CheckCameraConditionSets();
+        if (!DalamudApi.ClientState.IsLoggedIn || FreeCam.Enabled || PresetOverride != null) return;
+        CheckCameraConditionSets(false);
     }
 
     public static void DisableCameraPresets()

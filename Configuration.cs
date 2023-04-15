@@ -35,7 +35,7 @@ public class CameraConfigPreset
 
     public bool CheckConditionSet() => ConditionSet < 0 || IPC.QoLBarEnabled && IPC.CheckConditionSet(ConditionSet);
 
-    public void Apply() => PresetManager.ApplyPreset(this);
+    public void Apply(bool isLoggingIn = false) => PresetManager.ApplyPreset(this, isLoggingIn);
 }
 
 public class Configuration : PluginConfiguration<Configuration>, IPluginConfiguration

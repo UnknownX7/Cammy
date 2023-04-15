@@ -15,10 +15,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
     {
         Game.Initialize();
         IPC.Initialize();
-
         DalamudApi.ClientState.Login += Login;
-        DalamudApi.ClientState.Logout += Logout;
-        DalamudApi.ClientState.TerritoryChanged += TerritoryChanged;
     }
 
     protected override void ToggleConfig() => PluginUI.IsVisible ^= true;
@@ -121,27 +118,16 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
     protected override void Update()
     {
-        Game.Update();
         FreeCam.Update();
         PresetManager.Update();
     }
 
     protected override void Draw() => PluginUI.Draw();
 
-    private void Login(object sender, EventArgs e) => Game.CachedDefaultLookAtHeight = null;
-
-    private void Logout(object sender, EventArgs e)
+    private static void Login(object sender, EventArgs e)
     {
-        Game.CachedDefaultLookAtHeight = null;
-        Game.isLoggedIn = false;
         PresetManager.DisableCameraPresets();
-    }
-
-    private void TerritoryChanged(object sender, ushort id)
-    {
-        Game.isChangingAreas = true;
-        Game.changingAreaDelay = 1;
-        PresetManager.DisableCameraPresets();
+        PresetManager.CheckCameraConditionSets(true);
     }
 
     protected override void Dispose(bool disposing)
@@ -150,8 +136,6 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
         IPC.Dispose();
         PresetManager.DefaultPreset.Apply();
         DalamudApi.ClientState.Login -= Login;
-        DalamudApi.ClientState.Logout -= Logout;
-        DalamudApi.ClientState.TerritoryChanged -= TerritoryChanged;
 
         if (FreeCam.Enabled)
             FreeCam.Toggle();
