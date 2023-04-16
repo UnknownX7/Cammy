@@ -16,7 +16,6 @@ public static unsafe class Game
     public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
     private static AsmPatch addMidHookReplacer;
 
-    // Of course this isn't though
     [HypostasisSignatureInjection("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F", Static = true, Required = true)] // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
     private static float* foVDeltaPtr;
     public static float FoVDelta // 0.08726646751
@@ -142,8 +141,8 @@ public static unsafe class Game
         vtbl.canChangePerspective.CreateHook(CanChangePerspectiveDetour);
         vtbl.getZoomDelta.CreateHook(GetZoomDeltaDetour);
 
-        GameCamera.getCameraAutoRotateMode.CreateHook(GetCameraAutoRotateModeDetour); // Found inside Client__Game__Camera_UpdateRotation
-        GameCamera.getCameraMaxMaintainDistance.CreateHook(GetCameraMaxMaintainDistanceDetour); // Found 1 function deep inside Client__Game__Camera_vf3
+        GameCamera.getCameraAutoRotateMode.CreateHook(GetCameraAutoRotateModeDetour);
+        GameCamera.getCameraMaxMaintainDistance.CreateHook(GetCameraMaxMaintainDistanceDetour);
         GameCamera.updateLookAtHeightOffset.CreateHook(UpdateLookAtHeightOffsetDetour);
 
         // Gross workaround for fixing legacy control's maintain distance

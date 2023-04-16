@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": ""
+  "Changelog": "Added view bobbing, added free cam support for both GPose and Duty Recorder, removed useless settings, fixed several bugs related to camera settings resetting"
 }
