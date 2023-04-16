@@ -29,6 +29,7 @@ public static unsafe class FreeCam
     private static Vector3 position;
     private static bool onDeath = false;
     private static bool onDeathActivated = false;
+    private static CameraConfigPreset prevPresetOverride;
     private static float prevZoom = 0;
     private static float prevFoV = 0;
     private static bool displayedControls = false;
@@ -98,6 +99,7 @@ public static unsafe class FreeCam
             speed = 1;
             position = new(gameCamera->viewX, gameCamera->viewY, gameCamera->viewZ);
             onDeath = death;
+            prevPresetOverride = PresetManager.PresetOverride;
             prevZoom = gameCamera->currentZoom;
             prevFoV = gameCamera->currentFoV;
 
@@ -131,6 +133,7 @@ public static unsafe class FreeCam
                     Game.ForceDisableMovement--;
                 PresetManager.DefaultPreset.Apply();
                 PresetManager.DisableCameraPresets();
+                PresetManager.CurrentPreset = prevPresetOverride;
             }
 
             gameCamera->currentZoom = gameCamera->interpolatedZoom = prevZoom;
