@@ -23,6 +23,7 @@ public static class PluginUI
 
         ImGui.SetNextWindowSizeConstraints(new Vector2(700, 685) * ImGuiHelpers.GlobalScale, new Vector2(9999));
         ImGui.Begin("Cammy Configuration", ref isVisible);
+        ImGuiEx.AddDonationHeader();
 
         if (ImGui.BeginTabBar("CammyTabs"))
         {
@@ -113,8 +114,7 @@ public static class PluginUI
 
         ImGui.PopFont();
 
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("You can CTRL + Left Click sliders to input values manually.");
+        ImGuiEx.SetItemTooltip("You can CTRL + Left Click sliders to input values manually.");
 
         ImGui.BeginChild("CammyPresetList", new Vector2(250 * ImGuiHelpers.GlobalScale, 0), true);
 
@@ -147,7 +147,7 @@ public static class PluginUI
         if (!hasSelectedPreset) return;
 
         ImGui.SameLine();
-        ImGui.BeginChild("CammyPresetEditor", ImGui.GetContentRegionAvail(), true);
+        ImGui.BeginChild("CammyPresetEditor", Vector2.Zero, true);
         DrawPresetEditor(currentPreset);
         ImGui.EndChild();
     }
@@ -275,8 +275,7 @@ public static class PluginUI
             preset.MinFoV += x;
             preset.MaxFoV += x;
         });
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("In some weather, the FoV will cause lag or crash if the total is 3.14.");
+        ImGuiEx.SetItemTooltip("In some weather, the FoV will cause lag or crash if the total is 3.14.");
 
         if (preset.UseStartFoV)
             ResetSliderFloat("Starting##FoV", ref preset.StartFoV, preset.MinFoV, preset.MaxFoV, 0.78f, "%f");
@@ -300,7 +299,7 @@ public static class PluginUI
         //ResetSliderFloat("Tilt", ref preset.Tilt, -MathF.PI, MathF.PI, 0, "%f");
         ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, Game.GetDefaultLookAtHeightOffset, "%f");
 
-        if (ImGui.Checkbox("View Bobbing", ref preset.EnableViewBobbing))
+        if (ImGuiEx.EnumCombo("View Bobbing", ref preset.ViewBobMode))
             Cammy.Config.Save();
 
         ImGui.Spacing();
@@ -336,73 +335,59 @@ public static class PluginUI
 
             ImGui.EndCombo();
         }
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Uses a QoL Bar Condition Set to automatically swap to this preset." +
-                "\nPresets higher in the list will have priority over lower ones." +
-                "\nCondition Sets should be made using the QoL Bar plugin config." +
-                "\nPlease see the \"Other Settings\" tab to verify if QoL Bar was detected.");
+
+        ImGuiEx.SetItemTooltip("Uses a QoL Bar Condition Set to automatically swap to this preset." +
+            "\nPresets higher in the list will have priority over lower ones." +
+            "\nCondition Sets should be made using the QoL Bar plugin config." +
+            "\nPlease see the \"Other Settings\" tab to verify if QoL Bar was detected.");
     }
 
-    private static unsafe void DrawOtherSettings()
+    private static void DrawOtherSettings()
     {
-        ImGui.TextUnformatted("QoL Bar Status:");
-        ImGui.SameLine();
-        if (!IPC.QoLBarEnabled)
-            ImGui.TextColored(new Vector4(1, 0, 0, 1), "Disabled");
-        else
-            ImGui.TextColored(new Vector4(0, 1, 0, 1), "Enabled");
-
         var save = false;
 
-        ImGui.Spacing();
-        ImGui.Columns(3, null, false);
-
+        if (ImGuiEx.BeginGroupBox("Miscellaneous Options", 0.5f))
         {
+            if (Game.cameraNoClippyReplacer.IsValid)
+            {
+                if (ImGui.Checkbox("Disable Camera Collision", ref Cammy.Config.EnableCameraNoClippy))
+                {
+                    if (!FreeCam.Enabled)
+                        Game.cameraNoClippyReplacer.Toggle();
+                    save = true;
+                }
+            }
+
+            ImGui.TextUnformatted("Death Cam Mode");
+            ImGuiEx.Prefix(true);
+            save |= ImGuiEx.EnumCombo("##DeathCam", ref Cammy.Config.DeathCamMode);
+
+            ImGuiEx.EndGroupBox();
+        }
+
+        ImGui.SameLine();
+
+        if (ImGuiEx.BeginGroupBox("Other", 0.5f))
+        {
+            ImGui.TextUnformatted("QoL Bar Status:");
+            ImGui.SameLine();
+            if (!IPC.QoLBarEnabled)
+                ImGui.TextColored(new Vector4(1, 0, 0, 1), "Disabled");
+            else
+                ImGui.TextColored(new Vector4(0, 1, 0, 1), "Enabled");
+
             var _ = Game.EnableSpectating;
             if (ImGui.Checkbox("Spectate Focus / Soft Target", ref _))
                 Game.EnableSpectating = _;
-        }
 
-        {
-            ImGui.NextColumn();
-            var _ = FreeCam.Enabled;
-            if (ImGui.Checkbox("Free Cam", ref _))
+            var __ = FreeCam.Enabled;
+            if (ImGui.Checkbox("Free Cam", ref __))
                 FreeCam.Toggle();
             ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
+
+            ImGuiEx.EndGroupBox();
         }
 
-        if (Game.cameraNoClippyReplacer.IsValid)
-        {
-            ImGui.NextColumn();
-            if (ImGui.Checkbox("Disable Camera Collision", ref Cammy.Config.EnableCameraNoClippy))
-            {
-                if (!FreeCam.Enabled)
-                    Game.cameraNoClippyReplacer.Toggle();
-                Cammy.Config.Save();
-            }
-        }
-
-        ImGui.Columns(1);
-
-        ImGui.TextUnformatted("Death Cam Mode");
-        ImGui.Indent();
-        save |= ImGui.RadioButton("None##DeathCam", ref Cammy.Config.DeathCamMode, 0);
-        ImGui.SameLine();
-        save |= ImGui.RadioButton("Spectate Target##DeathCam", ref Cammy.Config.DeathCamMode, 1);
-        ImGui.SameLine();
-        save |= ImGui.RadioButton("Free Cam##DeathCam", ref Cammy.Config.DeathCamMode, 2);
-        ImGui.Unindent();
-
-        ImGui.Spacing();
-
-        {
-            ImGui.PushFont(UiBuilder.IconFont);
-            if (ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}##Reset???"))
-                Common.CameraManager->worldCamera->mode = 1;
-            ImGui.PopFont();
-            ImGui.SameLine();
-            ImGui.SliderInt("???", ref Common.CameraManager->worldCamera->mode, 0, 2);
-        }
 
         if (save)
             Cammy.Config.Save();

@@ -178,7 +178,7 @@ public static unsafe class FreeCam
 
     public static void Update()
     {
-        if (Cammy.Config.DeathCamMode == 2)
+        if (Cammy.Config.DeathCamMode == Configuration.DeathCamSetting.FreeCam)
             CheckDeath();
 
         if (!Enabled) return;

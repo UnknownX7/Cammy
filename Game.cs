@@ -11,8 +11,10 @@ namespace Cammy;
 public static unsafe class Game
 {
     public static bool EnableSpectating { get; set; } = false;
+    public static bool IsSpectating { get; private set; } = false;
 
-    private static float GetZoomDeltaDetour() => PresetManager.CurrentPreset.ZoomDelta;
+    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+    private static AsmPatch addMidHookReplacer;
 
     // Of course this isn't though
     [HypostasisSignatureInjection("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F", Static = true, Required = true)] // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
@@ -27,6 +29,12 @@ public static unsafe class Game
         }
     }
 
+    [HypostasisSignatureInjection("F3 0F 10 05 ?? ?? ?? ?? 0F 2E C6 0F 8A", Offset = 4, Static = true, Required = true)] // Also found at g_PlayerMoveController + 0x54C
+    private static nint forceDisableMovementPtr;
+    public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
+
+    private static float GetZoomDeltaDetour() => PresetManager.CurrentPreset.ZoomDelta;
+
     private static void SetCameraLookAtDetour(GameCamera* camera, Vector3* lookAtPosition, Vector3* cameraPosition, Vector3* a4) // a4 seems to be immediately overwritten and unused
     {
         if (FreeCam.Enabled) return;
@@ -40,10 +48,19 @@ public static unsafe class Game
             var preset = PresetManager.CurrentPreset;
 
             var cameraTarget = GetCameraTargetDetour(camera);
-            if (preset.EnableViewBobbing && Common.getLocalBonePosition.IsValid && cameraTarget != null && cameraTarget->DrawObject != null && Common.GetLocalBonePosition(cameraTarget, 26) is var offset && offset != Vector3.Zero)
+            if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && camera->mode == 0 || camera->transition != 0)
+                    || (preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.OutOfCombat && !DalamudApi.Condition[ConditionFlag.InCombat])
+                    || preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.Always)
+                && Common.getLocalBonePosition.IsValid && cameraTarget != null && cameraTarget->DrawObject != null && Common.GetLocalBonePosition(cameraTarget, 26) is var offset && offset != Vector3.Zero)
+            {
                 *position = offset + (Vector3)cameraTarget->DrawObject->Object.Position;
+            }
             else
+            {
                 camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
+                if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled)
+                    position->Y += GetDefaultLookAtHeightOffset();
+            }
 
             position->Y += preset.HeightOffset;
 
@@ -60,7 +77,6 @@ public static unsafe class Game
         }
     }
 
-    public static bool IsSpectating { get; private set; } = false;
     private static GameObject* GetCameraTargetDetour(GameCamera* camera)
     {
         if (EnableSpectating)
@@ -78,7 +94,7 @@ public static unsafe class Game
             }
         }
 
-        if (Cammy.Config.DeathCamMode == 1 && DalamudApi.Condition[ConditionFlag.Unconscious] && DalamudApi.TargetManager.Target is { } target)
+        if (Cammy.Config.DeathCamMode == Configuration.DeathCamSetting.Spectate && DalamudApi.Condition[ConditionFlag.Unconscious] && DalamudApi.TargetManager.Target is { } target)
         {
             IsSpectating = true;
             return (GameObject*)target.Address;
@@ -93,14 +109,6 @@ public static unsafe class Game
     private static byte GetCameraAutoRotateModeDetour(GameCamera* camera, Framework* framework) => (byte)(FreeCam.Enabled || IsSpectating ? 4 : GameCamera.getCameraAutoRotateMode.Original(camera, framework));
 
     private static float GetCameraMaxMaintainDistanceDetour(GameCamera* camera) => GameCamera.getCameraMaxMaintainDistance.Original(camera) is var ret && ret < 10f ? ret : camera->maxZoom;
-
-    [HypostasisSignatureInjection("F3 0F 10 05 ?? ?? ?? ?? 0F 2E C6 0F 8A", Offset = 4, Static = true, Required = true)] // Also found at g_PlayerMoveController + 0x54C
-    private static nint forceDisableMovementPtr;
-    public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
-
-    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
-
-    private static AsmPatch addMidHookReplacer;
 
     public static float GetDefaultLookAtHeightOffset()
     {

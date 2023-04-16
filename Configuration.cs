@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Dalamud.Configuration;
 
 namespace Cammy;
 
 public class CameraConfigPreset
 {
+    public enum ViewBobSetting
+    {
+        Disabled,
+        [Display(Name = "First Person")] FirstPerson,
+        [Display(Name = "Out of Combat")] OutOfCombat,
+        Always
+    }
+
     public string Name = "New Preset";
 
     public bool UseStartOnLogin = false;
@@ -29,7 +38,7 @@ public class CameraConfigPreset
     public float SideOffset = 0;
     public float Tilt = 0;
     public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset();
-    public bool EnableViewBobbing = false;
+    public ViewBobSetting ViewBobMode = ViewBobSetting.Disabled;
     public int ConditionSet = -1;
 
     public CameraConfigPreset Clone() => (CameraConfigPreset)MemberwiseClone();
@@ -41,7 +50,14 @@ public class CameraConfigPreset
 
 public class Configuration : PluginConfiguration<Configuration>, IPluginConfiguration
 {
+    public enum DeathCamSetting
+    {
+        Disabled,
+        Spectate,
+        [Display(Name = "Free Cam")] FreeCam
+    }
+
     public List<CameraConfigPreset> Presets = new();
     public bool EnableCameraNoClippy = false;
-    public int DeathCamMode = 0;
+    public DeathCamSetting DeathCamMode = DeathCamSetting.Disabled;
 }
