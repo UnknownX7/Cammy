@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Dalamud.Configuration;
 
@@ -37,7 +36,7 @@ public class CameraConfigPreset
     public float HeightOffset = 0;
     public float SideOffset = 0;
     public float Tilt = 0;
-    public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset();
+    public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset() ?? 0;
     public ViewBobSetting ViewBobMode = ViewBobSetting.Disabled;
     public int ConditionSet = -1;
 

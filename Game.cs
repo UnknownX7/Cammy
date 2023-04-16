@@ -40,6 +40,7 @@ public static unsafe class Game
         camera->VTable.setCameraLookAt.Original(camera, lookAtPosition, cameraPosition, a4);
     }
 
+    private static float cachedDefaultLookAtHeightOffset = 0;
     private static void GetCameraPositionDetour(GameCamera* camera, GameObject* target, Vector3* position, Bool swapPerson)
     {
         if (!FreeCam.Enabled)
@@ -58,7 +59,12 @@ public static unsafe class Game
             {
                 camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
                 if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled)
-                    position->Y += GetDefaultLookAtHeightOffset();
+                {
+                    var defaultLookAtHeightOffset = GetDefaultLookAtHeightOffset();
+                    if (defaultLookAtHeightOffset.HasValue)
+                        cachedDefaultLookAtHeightOffset = defaultLookAtHeightOffset.Value;
+                    position->Y += cachedDefaultLookAtHeightOffset;
+                }
             }
 
             position->Y += preset.HeightOffset;
@@ -109,13 +115,14 @@ public static unsafe class Game
 
     private static float GetCameraMaxMaintainDistanceDetour(GameCamera* camera) => GameCamera.getCameraMaxMaintainDistance.Original(camera) is var ret && ret < 10f ? ret : camera->maxZoom;
 
-    public static float GetDefaultLookAtHeightOffset()
+    public static float? GetDefaultLookAtHeightOffset()
     {
         var worldCamera = Common.CameraManager->worldCamera;
         if (worldCamera == null || DalamudApi.ClientState.LocalPlayer is not { } p) return 0;
 
         var prev = worldCamera->lookAtHeightOffset;
-        GameCamera.updateLookAtHeightOffset.Original(worldCamera, (GameObject*)p.Address, false);
+        if (!GameCamera.updateLookAtHeightOffset.Original(worldCamera, (GameObject*)p.Address, false)) return null;
+
         var ret = worldCamera->lookAtHeightOffset;
         worldCamera->lookAtHeightOffset = prev;
         return ret;

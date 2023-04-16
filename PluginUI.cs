@@ -297,7 +297,7 @@ public static class PluginUI
         ResetSliderFloat("Camera Height Offset", ref preset.HeightOffset, -1, 1, 0, "%.2f");
         ResetSliderFloat("Camera Side Offset", ref preset.SideOffset, -1, 1, 0, "%.2f");
         //ResetSliderFloat("Tilt", ref preset.Tilt, -MathF.PI, MathF.PI, 0, "%f");
-        ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, Game.GetDefaultLookAtHeightOffset, "%f");
+        ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, () => Game.GetDefaultLookAtHeightOffset() ?? 0, "%f");
 
         if (ImGuiEx.EnumCombo("View Bobbing", ref preset.ViewBobMode))
             Cammy.Config.Save();
