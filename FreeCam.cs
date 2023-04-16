@@ -319,5 +319,5 @@ public static unsafe class FreeCam
     private static Bool IsInputIDPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDPressed.Original(inputData, inputID);
     private static Bool IsInputIDLongPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDLongPressed.Original(inputData, inputID);
     private static Bool IsInputIDReleasedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDReleased.Original(inputData, inputID);
-    private static int GetAxisInputDetour(InputData* inputData, uint inputID) => inputID is not (3 or 4 or 6) ? InputData.getAxisInput.Original(inputData, inputID) : 0;
+    private static int GetAxisInputDetour(InputData* inputData, uint inputID) => inputID is not (3 or 4) ? InputData.getAxisInput.Original(inputData, inputID) : 0;
 }
