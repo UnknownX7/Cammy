@@ -47,18 +47,18 @@ public static unsafe class Game
         {
             var preset = PresetManager.CurrentPreset;
 
-            if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && (camera->mode == 0 || (camera->transition != 0 && camera->controlType < 2)))
+            if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && (camera->mode == 0 || (camera->transition != 0 && camera->controlType <= 2)))
                     || (preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.OutOfCombat && !DalamudApi.Condition[ConditionFlag.InCombat])
                     || preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.Always)
                 && Common.getWorldBonePosition.IsValid && target->DrawObject != null)
             {
                 // Data seems to be cached somehow and the position is slightly behind but only at this point in the frame
-                *position = Common.GetWorldBonePosition(target, 26) - Common.GetWorldBonePosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
+                *position = Common.GetBoneWorldPosition(target, 26) - Common.GetBoneWorldPosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
             }
             else
             {
                 camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
-                if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled)
+                if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled && (nint)target == DalamudApi.ClientState.LocalPlayer?.Address)
                 {
                     var defaultLookAtHeightOffset = GetDefaultLookAtHeightOffset();
                     if (defaultLookAtHeightOffset.HasValue)
@@ -136,6 +136,9 @@ public static unsafe class Game
         return ret;
     }
 
+    public static Bool ShouldDisplayObjectDetour(GameCamera* camera, GameObject* o, Vector3* cameraPosition, Vector3* cameraLookAt) =>
+        ((nint)o != DalamudApi.ClientState.LocalPlayer?.Address || camera->mode != 0 || (camera->transition != 0 && camera->controlType <= 2)) && GameCamera.shouldDisplayObject.Original(camera, o, cameraPosition, cameraLookAt);
+
     public static void Initialize()
     {
         if (Common.CameraManager == null || !Common.IsValid(Common.CameraManager->worldCamera) || !Common.IsValid(Common.InputData))
@@ -151,6 +154,7 @@ public static unsafe class Game
         GameCamera.getCameraAutoRotateMode.CreateHook(GetCameraAutoRotateModeDetour);
         GameCamera.getCameraMaxMaintainDistance.CreateHook(GetCameraMaxMaintainDistanceDetour);
         GameCamera.updateLookAtHeightOffset.CreateHook(UpdateLookAtHeightOffsetDetour);
+        GameCamera.shouldDisplayObject.CreateHook(ShouldDisplayObjectDetour);
 
         // Gross workaround for fixing legacy control's maintain distance
         var address = DalamudApi.SigScanner.ScanModule("48 85 C9 74 24 48 83 C1 10");
