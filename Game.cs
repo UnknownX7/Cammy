@@ -47,13 +47,13 @@ public static unsafe class Game
         {
             var preset = PresetManager.CurrentPreset;
 
-            var cameraTarget = GetCameraTargetDetour(camera);
-            if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && camera->mode == 0 || camera->transition != 0)
+            if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && (camera->mode == 0 || (camera->transition != 0 && camera->controlType < 2)))
                     || (preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.OutOfCombat && !DalamudApi.Condition[ConditionFlag.InCombat])
                     || preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.Always)
-                && Common.getLocalBonePosition.IsValid && cameraTarget != null && cameraTarget->DrawObject != null && Common.GetLocalBonePosition(cameraTarget, 26) is var offset && offset != Vector3.Zero)
+                && Common.getWorldBonePosition.IsValid && target->DrawObject != null)
             {
-                *position = offset + (Vector3)cameraTarget->DrawObject->Object.Position;
+                // Data seems to be cached somehow and the position is slightly behind but only at this point in the frame
+                *position = Common.GetWorldBonePosition(target, 26) - Common.GetWorldBonePosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
             }
             else
             {
