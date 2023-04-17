@@ -137,7 +137,7 @@ public static unsafe class Game
     }
 
     public static Bool ShouldDisplayObjectDetour(GameCamera* camera, GameObject* o, Vector3* cameraPosition, Vector3* cameraLookAt) =>
-        ((nint)o != DalamudApi.ClientState.LocalPlayer?.Address || camera->mode != 0 || (camera->transition != 0 && camera->controlType <= 2)) && GameCamera.shouldDisplayObject.Original(camera, o, cameraPosition, cameraLookAt);
+        ((nint)o != DalamudApi.ClientState.LocalPlayer?.Address || camera != Common.CameraManager->worldCamera || camera->mode != 0 || (camera->transition != 0 && camera->controlType <= 2)) && GameCamera.shouldDisplayObject.Original(camera, o, cameraPosition, cameraLookAt);
 
     public static void Initialize()
     {
