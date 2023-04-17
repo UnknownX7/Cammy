@@ -40,7 +40,9 @@ public static unsafe class Game
         camera->VTable.setCameraLookAt.Original(camera, lookAtPosition, cameraPosition, a4);
     }
 
-    private static float cachedDefaultLookAtHeightOffset = 0;
+    private static float cachedDefaultLookAtHeightOffset;
+    private static GameObject* prevCameraTarget;
+    private static float interpolatedHeight;
     private static void GetCameraPositionDetour(GameCamera* camera, GameObject* target, Vector3* position, Bool swapPerson)
     {
         if (!FreeCam.Enabled)
@@ -52,8 +54,23 @@ public static unsafe class Game
                     || preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.Always)
                 && Common.getWorldBonePosition.IsValid && target->DrawObject != null)
             {
-                // Data seems to be cached somehow and the position is slightly behind but only at this point in the frame
-                *position = Common.GetBoneWorldPosition(target, 26) - Common.GetBoneWorldPosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
+                // Data seems to be cached somehow and the position is slightly behind, but only at this point in the frame
+                var newPos = Common.GetBoneWorldPosition(target, 26) - Common.GetBoneWorldPosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
+                var d = newPos.Y - interpolatedHeight;
+                if (target == prevCameraTarget && d is > -3 and < 3)
+                {
+                    var amount = d * (float)DalamudApi.Framework.UpdateDelta.TotalSeconds * 10;
+                    interpolatedHeight = d >= 0
+                        ? Math.Max(interpolatedHeight + Math.Min(Math.Max(amount, 0), d), newPos.Y - 0.7f)
+                        : Math.Min(interpolatedHeight + Math.Max(Math.Min(amount, 0), d), newPos.Y + 0.7f);
+                }
+                else
+                {
+                    interpolatedHeight = newPos.Y;
+                }
+
+                *position = newPos with { Y = interpolatedHeight };
+                prevCameraTarget = target;
             }
             else
             {
@@ -65,6 +82,8 @@ public static unsafe class Game
                         cachedDefaultLookAtHeightOffset = defaultLookAtHeightOffset.Value;
                     position->Y += cachedDefaultLookAtHeightOffset;
                 }
+
+                prevCameraTarget = null;
             }
 
             position->Y += preset.HeightOffset;
