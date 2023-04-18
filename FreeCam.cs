@@ -282,26 +282,27 @@ public static unsafe class FreeCam
         }
     }
 
+    // Obnoxious
     private static void EnableInputBlockers()
     {
         if (!InputData.isInputIDHeld.IsHooked)
-            InputData.isInputIDHeld.CreateHook(IsInputIDHeldDetour);
+            InputData.isInputIDHeld.CreateHook((inputData, inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDHeld.Original(inputData, inputID));
         InputData.isInputIDHeld.Hook.Enable();
 
         if (!InputData.isInputIDPressed.IsHooked)
-            InputData.isInputIDPressed.CreateHook(IsInputIDPressedDetour);
+            InputData.isInputIDPressed.CreateHook((inputData, inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDPressed.Original(inputData, inputID));
         InputData.isInputIDPressed.Hook.Enable();
 
         if (!InputData.isInputIDLongPressed.IsHooked)
-            InputData.isInputIDLongPressed.CreateHook(IsInputIDLongPressedDetour);
+            InputData.isInputIDLongPressed.CreateHook((inputData, inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDLongPressed.Original(inputData, inputID));
         InputData.isInputIDLongPressed.Hook.Enable();
 
         if (!InputData.isInputIDReleased.IsHooked)
-            InputData.isInputIDReleased.CreateHook(IsInputIDReleasedDetour);
+            InputData.isInputIDReleased.CreateHook((inputData, inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDReleased.Original(inputData, inputID));
         InputData.isInputIDReleased.Hook.Enable();
 
         if (!InputData.getAxisInput.IsHooked)
-            InputData.getAxisInput.CreateHook(GetAxisInputDetour);
+            InputData.getAxisInput.CreateHook((inputData, inputID) => inputID is not (3 or 4) ? InputData.getAxisInput.Original(inputData, inputID) : 0);
         InputData.getAxisInput.Hook.Enable();
     }
 
@@ -313,11 +314,4 @@ public static unsafe class FreeCam
         InputData.isInputIDReleased.Hook.Disable();
         InputData.getAxisInput.Hook.Disable();
     }
-
-    // Obnoxious
-    private static Bool IsInputIDHeldDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDHeld.Original(inputData, inputID);
-    private static Bool IsInputIDPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDPressed.Original(inputData, inputID);
-    private static Bool IsInputIDLongPressedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDLongPressed.Original(inputData, inputID);
-    private static Bool IsInputIDReleasedDetour(InputData* inputData, uint inputID) => !keybindings.ContainsValue(inputID) && InputData.isInputIDReleased.Original(inputData, inputID);
-    private static int GetAxisInputDetour(InputData* inputData, uint inputID) => inputID is not (3 or 4) ? InputData.getAxisInput.Original(inputData, inputID) : 0;
 }
