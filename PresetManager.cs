@@ -16,7 +16,7 @@ public static class PresetManager
         }
     }
 
-    public static CameraConfigPreset DefaultPreset { get; } = new();
+    public static CameraConfigPreset DefaultPreset { get; set; } = new();
 
     public static CameraConfigPreset ActivePreset { get; private set; }
 

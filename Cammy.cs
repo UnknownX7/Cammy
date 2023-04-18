@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin;
 
 namespace Cammy;
@@ -129,8 +131,16 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
     private static void Login(object sender, EventArgs e)
     {
+        DalamudApi.Framework.Update += UpdateDefaultPreset;
         PresetManager.DisableCameraPresets();
         PresetManager.CheckCameraConditionSets(true);
+    }
+
+    private static void UpdateDefaultPreset(Framework framework)
+    {
+        if (DalamudApi.Condition[ConditionFlag.BetweenAreas]) return;
+        PresetManager.DefaultPreset = new();
+        DalamudApi.Framework.Update -= UpdateDefaultPreset;
     }
 
     protected override void Dispose(bool disposing)

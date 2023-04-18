@@ -151,7 +151,7 @@ public static unsafe class Game
     public static Bool UpdateLookAtHeightOffsetDetour(GameCamera* camera, GameObject* o, Bool zero)
     {
         var ret = GameCamera.updateLookAtHeightOffset.Original(camera, o, zero);
-        if (ret && !zero && (nint)o == DalamudApi.ClientState.LocalPlayer?.Address)
+        if (ret && !zero && (nint)o == DalamudApi.ClientState.LocalPlayer?.Address && PresetManager.CurrentPreset != PresetManager.DefaultPreset)
             camera->lookAtHeightOffset = PresetManager.CurrentPreset.LookAtHeightOffset;
         return ret;
     }
