@@ -49,6 +49,8 @@ public static unsafe class Game
         {
             var preset = PresetManager.CurrentPreset;
 
+            camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
+
             if (((preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.FirstPerson && (camera->mode == 0 || (camera->transition != 0 && camera->controlType <= 2)))
                     || (preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.OutOfCombat && !DalamudApi.Condition[ConditionFlag.InCombat])
                     || preset.ViewBobMode == CameraConfigPreset.ViewBobSetting.Always)
@@ -74,7 +76,6 @@ public static unsafe class Game
             }
             else
             {
-                camera->VTable.getCameraPosition.Original(camera, target, position, swapPerson);
                 if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled && (nint)target == DalamudApi.ClientState.LocalPlayer?.Address)
                 {
                     var defaultLookAtHeightOffset = GetDefaultLookAtHeightOffset();
