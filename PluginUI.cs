@@ -342,7 +342,7 @@ public static class PluginUI
             "\nPlease see the \"Other Settings\" tab to verify if QoL Bar was detected.");
     }
 
-    private static void DrawOtherSettings()
+    private static unsafe void DrawOtherSettings()
     {
         var save = false;
 
@@ -388,6 +388,17 @@ public static class PluginUI
             ImGuiEx.EndGroupBox();
         }
 
+        if (ImGuiEx.BeginGroupBox())
+        {
+            ImGui.PushFont(UiBuilder.IconFont);
+            if (ImGui.Button(FontAwesomeIcon.UndoAlt.ToIconString()))
+                Common.CameraManager->worldCamera->tilt = 0;
+            ImGui.PopFont();
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 60 * ImGuiHelpers.GlobalScale);
+            ImGui.SliderFloat("Tilt", ref Common.CameraManager->worldCamera->tilt, -MathF.PI, MathF.PI, "%f");
+            ImGuiEx.EndGroupBox();
+        }
 
         if (save)
             Cammy.Config.Save();
