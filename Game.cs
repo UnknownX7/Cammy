@@ -42,6 +42,7 @@ public static unsafe class Game
 
     private static float cachedDefaultLookAtHeightOffset;
     private static GameObject* prevCameraTarget;
+    private static Vector3 prevCameraTargetPosition;
     private static float interpolatedHeight;
     private static void GetCameraPositionDetour(GameCamera* camera, GameObject* target, Vector3* position, Bool swapPerson)
     {
@@ -57,7 +58,10 @@ public static unsafe class Game
                 && Common.getWorldBonePosition.IsValid && target->DrawObject != null)
             {
                 // Data seems to be cached somehow and the position is slightly behind, but only at this point in the frame
-                var newPos = Common.GetBoneWorldPosition(target, 26) - Common.GetBoneWorldPosition(target, 71) + (Vector3)target->DrawObject->Object.Position;
+                if (target != prevCameraTarget)
+                    prevCameraTargetPosition = target->Position;
+
+                var newPos = Common.GetBoneWorldPosition(target, 26) + ((Vector3)target->Position - prevCameraTargetPosition);
                 var d = target->Position.Y - interpolatedHeight;
                 if (target == prevCameraTarget && d is > -3 and < 3)
                 {
@@ -73,6 +77,7 @@ public static unsafe class Game
 
                 *position = newPos with { Y = newPos.Y - (target->Position.Y - interpolatedHeight) };
                 prevCameraTarget = target;
+                prevCameraTargetPosition = target->Position;
             }
             else
             {
