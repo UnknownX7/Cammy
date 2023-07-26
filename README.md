@@ -1,9 +1,5 @@
 # Cammy
 
-A simple camera editor to change various game defaults such as zoom and fov.
-This is a zoom hack, if you aren't comfortable with that fact, don't install it.
-
-For use with [FFXIVQuickLauncher](https://github.com/goaaats/FFXIVQuickLauncher).
-
-## Installation
-For installation instructions, please see my [custom plugin repository](https://github.com/UnknownX7/DalamudPluginRepo).
+一个简单的相机编辑器，用于更改各种游戏默认设置，例如缩放和视场。
+这是一个登月神器，如果您对此感到不满意，请不要安装。
+禁止任何形式倒卖！

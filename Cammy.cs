@@ -24,7 +24,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
     private const string cammySubcommands = "/cammy [ help | preset | zoom | fov | spectate | nocollide | freecam ]";
 
-    [PluginCommand("/cammy", HelpMessage = "Opens / closes the config. Additional usage: " + cammySubcommands)]
+    [PluginCommand("/cammy", HelpMessage = "打开/ 关闭设置. 附加指令: " + cammySubcommands)]
     private unsafe void ToggleConfig(string command, string argument)
     {
         if (string.IsNullOrEmpty(argument))
@@ -38,12 +38,12 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
         switch (subcommand.ToLower())
         {
-            case "preset":
+            case "预设":
                 {
                     if (regex.Groups.Count < 2 || string.IsNullOrEmpty(regex.Groups[2].Value))
                     {
                         PresetManager.CurrentPreset = null;
-                        PrintEcho("Removed preset override.");
+                        PrintEcho("删除了预设覆盖.");
                         return;
                     }
 
@@ -52,19 +52,19 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
                     if (preset == null)
                     {
-                        PrintError($"Failed to find preset \"{arg}\"");
+                        PrintError($"找不到预设 \"{arg}\"");
                         return;
                     }
 
                     PresetManager.CurrentPreset = preset;
-                    PrintEcho($"Preset set to \"{arg}\"");
+                    PrintEcho($"预设设置为 \"{arg}\"");
                     break;
                 }
             case "zoom":
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
-                        PrintError("Invalid amount.");
+                        PrintError("无效值.");
                         return;
                     }
 
@@ -75,47 +75,47 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
-                        PrintError("Invalid amount.");
+                        PrintError("无效值.");
                         return;
                     }
 
                     Common.CameraManager->worldCamera->currentFoV = amount;
                     break;
                 }
-            case "spectate":
+            case "查看":
                 {
                     Game.EnableSpectating ^= true;
-                    PrintEcho($"Spectating is now {(Game.EnableSpectating ? "enabled" : "disabled")}!");
+                    PrintEcho($"查看 {(Game.EnableSpectating ? "启用" : "未启用")}!");
                     break;
                 }
-            case "nocollide":
+            case "镜头碰撞":
                 {
                     Config.EnableCameraNoClippy ^= true;
                     if (!FreeCam.Enabled)
                         Game.cameraNoClippyReplacer.Toggle();
                     Config.Save();
-                    PrintEcho($"Camera collision is now {(Config.EnableCameraNoClippy ? "disabled" : "enabled")}!");
+                    PrintEcho($"镜头模型碰撞 {(Config.EnableCameraNoClippy ? "未启用" : "启用")}!");
                     break;
                 }
-            case "freecam":
+            case "自由镜头":
                 {
                     FreeCam.Toggle();
                     break;
                 }
-            case "help":
+            case "帮助":
                 {
-                    PrintEcho("Subcommands:" +
-                        "\npreset <name> - Applies a preset to override automatic presets, specified by name. Use without a name to disable." +
-                        "\nzoom <amount> - Sets the current zoom level." +
-                        "\nfov <amount> - Sets the current FoV level." +
-                        "\nspectate - Toggles the \"Spectate Focus / Soft Target\" option." +
-                        "\nnocollide - Toggles the \"Disable Camera Collision\" option." +
-                        "\nfreecam - Toggles the \"Free Cam\" option.");
+                    PrintEcho("子命令：" +
+                        "\npreset <name> - 应用预设来覆盖按名称指定的自动预设。不使用名称即可禁用。" +
+                        "\nzoom <amount> - 设置当前视距值." +
+                        "\nfov <amount> - 设置当前视野值." +
+                        "\nspectate - 切换“观看焦点/软目标”选项。" +
+                        "\nnocollide - 切换“禁用镜头模型碰撞”选项。" +
+                        "\nfreecam - 切换“自由镜头”选项。");
                     break;
                 }
             default:
                 {
-                    PrintError("Invalid usage: " + cammySubcommands);
+                    PrintError("无效使用: " + cammySubcommands);
                     break;
                 }
         }

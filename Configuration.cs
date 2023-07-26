@@ -9,12 +9,12 @@ public class CameraConfigPreset
     public enum ViewBobSetting
     {
         Disabled,
-        [Display(Name = "First Person")] FirstPerson,
-        [Display(Name = "Out of Combat")] OutOfCombat,
+        [Display(Name = "第一人称")] FirstPerson,
+        [Display(Name = "副本外")] OutOfCombat,
         Always
     }
 
-    public string Name = "New Preset";
+    public string Name = "新预设";
 
     public bool UseStartOnLogin = false;
 
@@ -53,7 +53,7 @@ public class Configuration : PluginConfiguration<Configuration>, IPluginConfigur
     {
         Disabled,
         Spectate,
-        [Display(Name = "Free Cam")] FreeCam
+        [Display(Name = "自由镜头")] FreeCam
     }
 
     public List<CameraConfigPreset> Presets = new();
