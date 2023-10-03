@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 
 namespace Cammy;
 
-public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
+public class Cammy : DalamudPlugin<Configuration>, IDalamudPlugin
 {
-    public override string Name => "Cammy";
-
     public Cammy(DalamudPluginInterface pluginInterface) : base(pluginInterface) { }
 
     protected override void Initialize()
@@ -43,7 +41,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                     if (regex.Groups.Count < 2 || string.IsNullOrEmpty(regex.Groups[2].Value))
                     {
                         PresetManager.CurrentPreset = null;
-                        PrintEcho("Removed preset override.");
+                        DalamudApi.PrintEcho("Removed preset override.");
                         return;
                     }
 
@@ -52,19 +50,19 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
                     if (preset == null)
                     {
-                        PrintError($"Failed to find preset \"{arg}\"");
+                        DalamudApi.PrintError($"Failed to find preset \"{arg}\"");
                         return;
                     }
 
                     PresetManager.CurrentPreset = preset;
-                    PrintEcho($"Preset set to \"{arg}\"");
+                    DalamudApi.PrintEcho($"Preset set to \"{arg}\"");
                     break;
                 }
             case "zoom":
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
-                        PrintError("Invalid amount.");
+                        DalamudApi.PrintError("Invalid amount.");
                         return;
                     }
 
@@ -75,7 +73,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 {
                     if (regex.Groups.Count < 2 || !float.TryParse(regex.Groups[2].Value, out var amount))
                     {
-                        PrintError("Invalid amount.");
+                        DalamudApi.PrintError("Invalid amount.");
                         return;
                     }
 
@@ -85,7 +83,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
             case "spectate":
                 {
                     Game.EnableSpectating ^= true;
-                    PrintEcho($"Spectating is now {(Game.EnableSpectating ? "enabled" : "disabled")}!");
+                    DalamudApi.PrintEcho($"Spectating is now {(Game.EnableSpectating ? "enabled" : "disabled")}!");
                     break;
                 }
             case "nocollide":
@@ -94,7 +92,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                     if (!FreeCam.Enabled)
                         Game.cameraNoClippyReplacer.Toggle();
                     Config.Save();
-                    PrintEcho($"Camera collision is now {(Config.EnableCameraNoClippy ? "disabled" : "enabled")}!");
+                    DalamudApi.PrintEcho($"Camera collision is now {(Config.EnableCameraNoClippy ? "disabled" : "enabled")}!");
                     break;
                 }
             case "freecam":
@@ -104,7 +102,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 }
             case "help":
                 {
-                    PrintEcho("Subcommands:" +
+                    DalamudApi.PrintEcho("Subcommands:" +
                         "\npreset <name> - Applies a preset to override automatic presets, specified by name. Use without a name to disable." +
                         "\nzoom <amount> - Sets the current zoom level." +
                         "\nfov <amount> - Sets the current FoV level." +
@@ -115,7 +113,7 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
                 }
             default:
                 {
-                    PrintError("Invalid usage: " + cammySubcommands);
+                    DalamudApi.PrintError("Invalid usage: " + cammySubcommands);
                     break;
                 }
         }
@@ -129,14 +127,14 @@ public class Cammy : DalamudPlugin<Cammy, Configuration>, IDalamudPlugin
 
     protected override void Draw() => PluginUI.Draw();
 
-    private static void Login(object sender, EventArgs e)
+    private static void Login()
     {
         DalamudApi.Framework.Update += UpdateDefaultPreset;
         PresetManager.DisableCameraPresets();
         PresetManager.CheckCameraConditionSets(true);
     }
 
-    private static void UpdateDefaultPreset(Framework framework)
+    private static void UpdateDefaultPreset(IFramework framework)
     {
         if (DalamudApi.Condition[ConditionFlag.BetweenAreas]) return;
         PresetManager.DefaultPreset = new();

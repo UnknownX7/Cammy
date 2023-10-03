@@ -13,7 +13,7 @@ public static unsafe class Game
     public static bool EnableSpectating { get; set; } = false;
     public static bool IsSpectating { get; private set; } = false;
 
-    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte?[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
     private static AsmPatch addMidHookReplacer;
 
     [HypostasisSignatureInjection("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F", Static = true, Required = true)] // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
@@ -189,7 +189,7 @@ public static unsafe class Game
         // call offset
         // jmp 27h
         addMidHookReplacer = new(address,
-            new byte[] {
+            new byte?[] {
                     0x48, 0x8B, 0xCB,
                     0xE8, offset[0], offset[1], offset[2], offset[3],
                     0xEB, 0x27,

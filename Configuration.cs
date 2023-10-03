@@ -47,7 +47,7 @@ public class CameraConfigPreset
     public void Apply(bool isLoggingIn = false) => PresetManager.ApplyPreset(this, isLoggingIn);
 }
 
-public class Configuration : PluginConfiguration<Configuration>, IPluginConfiguration
+public class Configuration : PluginConfiguration, IPluginConfiguration
 {
     public enum DeathCamSetting
     {
@@ -55,6 +55,8 @@ public class Configuration : PluginConfiguration<Configuration>, IPluginConfigur
         Spectate,
         [Display(Name = "Free Cam")] FreeCam
     }
+
+    public int Version { get; set; }
 
     public List<CameraConfigPreset> Presets = new();
     public bool EnableCameraNoClippy = false;

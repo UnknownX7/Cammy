@@ -114,7 +114,7 @@ public static unsafe class FreeCam
 
                 if (!death && !displayedControls)
                 {
-                    Cammy.ShowNotification(ControlsString, NotificationType.Info, 10_000);
+                    DalamudApi.ShowNotification(ControlsString, NotificationType.Info, 10_000);
                     displayedControls = true;
                 }
             }
