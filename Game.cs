@@ -61,7 +61,7 @@ public static unsafe class Game
                 if (target != prevCameraTarget)
                     prevCameraTargetPosition = target->Position;
 
-                var newPos = Common.GetBoneWorldPosition(target, 26) + ((Vector3)target->Position - prevCameraTargetPosition);
+                var newPos = Common.GetBoneWorldPosition(target, 30) + ((Vector3)target->Position - prevCameraTargetPosition);
                 var d = target->Position.Y - interpolatedHeight;
                 if (target == prevCameraTarget && d is > -3 and < 3)
                 {
