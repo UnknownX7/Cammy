@@ -104,6 +104,9 @@ public static unsafe class Game
             var a = Common.CameraManager->worldCamera->currentHRotation - halfPI;
             position->X += -preset.SideOffset * MathF.Sin(a);
             position->Z += -preset.SideOffset * MathF.Cos(a);
+
+            position->X -= preset.DepthOffset * MathF.Cos(a);
+            position->Z += preset.DepthOffset * MathF.Sin(a);
         }
         else
         {

@@ -297,7 +297,8 @@ public static class PluginUI
 
         ResetSliderFloat("Bone Index", ref preset.BoneIndex, 0, 77, 30.0f, "%1.0f");
         ResetSliderFloat("Camera Height Offset", ref preset.HeightOffset, -1, 1, 0, "%.2f");
-        ResetSliderFloat("Camera Side Offset", ref preset.SideOffset, -1, 1, 0, "%.2f");
+        ResetSliderFloat("Camera Side Offset", ref preset.SideOffset, -5, 5, 0, "%.2f");
+        ResetSliderFloat("Camera Depth Offset", ref preset.DepthOffset, -5, 5, 0, "%.2f");
         ResetSliderFloat("Tilt", ref preset.Tilt, -MathF.PI, MathF.PI, 0, "%f");
         ImGuiEx.SetItemTooltip("Not meant for general gameplay use! Will be moved to a separate feature in a later update.");
         ResetSliderFloat("Look at Height Offset", ref preset.LookAtHeightOffset, -10, 10, () => Game.GetDefaultLookAtHeightOffset() ?? 0, "%f");
@@ -387,6 +388,10 @@ public static class PluginUI
             if (ImGui.Checkbox("Free Cam", ref __))
                 FreeCam.Toggle();
             ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
+
+            var ___ = FreeCam.Focused;
+            if (ImGui.Checkbox("Focused", ref ___))
+                FreeCam.Focused = ___;
 
             ImGuiEx.EndGroupBox();
         }
