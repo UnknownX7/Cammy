@@ -295,6 +295,7 @@ public static class PluginUI
         ImGui.Separator();
         ImGui.Spacing();
 
+        ResetSliderFloat("Bone Index", ref preset.BoneIndex, 0, 77, 30.0f, "%1.0f");
         ResetSliderFloat("Camera Height Offset", ref preset.HeightOffset, -1, 1, 0, "%.2f");
         ResetSliderFloat("Camera Side Offset", ref preset.SideOffset, -1, 1, 0, "%.2f");
         ResetSliderFloat("Tilt", ref preset.Tilt, -MathF.PI, MathF.PI, 0, "%f");

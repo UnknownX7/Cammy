@@ -40,6 +40,8 @@ public class CameraConfigPreset
     public ViewBobSetting ViewBobMode = ViewBobSetting.Disabled;
     public int ConditionSet = -1;
 
+    public float BoneIndex = 0f;
+
     public CameraConfigPreset Clone() => (CameraConfigPreset)MemberwiseClone();
 
     public bool CheckConditionSet() => ConditionSet < 0 || IPC.QoLBarEnabled && IPC.CheckConditionSet(ConditionSet);
