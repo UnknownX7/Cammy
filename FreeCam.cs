@@ -21,6 +21,7 @@ public static unsafe class FreeCam
         "\nCycle through Enemies (Farthest to Nearest) / Controller Open Main Menu - Stop";
 
     public static bool Enabled => gameCamera != null;
+    public static bool Focused { get; set; } = false;
     public static Vector3 Position => position;
 
     private static GameCamera* gameCamera;
@@ -280,6 +281,13 @@ public static unsafe class FreeCam
             gameCamera->lookAtY = gameCamera->lookAtY2 += y;
             gameCamera->lookAtZ += z;
         }
+    }
+
+    public static void FocusOnPosition(Vector3 lockCharaPos)
+    {
+        Vector3 a4 = new Vector3(0.0f, -0.0f, +0.00f);
+        Vector3 pos = new Vector3(position.X, position.Y, position.Z);
+        position = pos;
     }
 
     // Obnoxious
