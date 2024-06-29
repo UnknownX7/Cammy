@@ -11,7 +11,8 @@ public class CameraConfigPreset
         Disabled,
         [Display(Name = "First Person")] FirstPerson,
         [Display(Name = "Out of Combat")] OutOfCombat,
-        Always
+        Always, 
+        Focus
     }
 
     public string Name = "New Preset";
@@ -35,6 +36,7 @@ public class CameraConfigPreset
 
     public float HeightOffset = 0;
     public float SideOffset = 0;
+    public float DepthOffset = 0;
     public float Tilt = 0;
     public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset() ?? 0;
     public ViewBobSetting ViewBobMode = ViewBobSetting.Disabled;
