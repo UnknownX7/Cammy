@@ -38,7 +38,7 @@ public static class IPC
         get
         {
             try { return qolBarGetConditionSetsProvider.InvokeFunc(); }
-            catch { return Array.Empty<string>(); }
+            catch { return []; }
         }
     }
 

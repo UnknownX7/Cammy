@@ -309,7 +309,7 @@ public static class PluginUI
         ImGui.Spacing();
 
         var qolBarEnabled = IPC.QoLBarEnabled;
-        var conditionSets = qolBarEnabled ? IPC.QoLBarConditionSets : Array.Empty<string>();
+        var conditionSets = qolBarEnabled ? IPC.QoLBarConditionSets : [];
         var display = preset.ConditionSet >= 0
             ? preset.ConditionSet < conditionSets.Length
                 ? $"[{preset.ConditionSet + 1}] {conditionSets[preset.ConditionSet]}"

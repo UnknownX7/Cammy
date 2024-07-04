@@ -7,10 +7,8 @@ using Dalamud.Plugin.Services;
 
 namespace Cammy;
 
-public class Cammy : DalamudPlugin<Configuration>, IDalamudPlugin
+public class Cammy(IDalamudPluginInterface pluginInterface) : DalamudPlugin<Configuration>(pluginInterface), IDalamudPlugin
 {
-    public Cammy(DalamudPluginInterface pluginInterface) : base(pluginInterface) { }
-
     protected override void Initialize()
     {
         Game.Initialize();

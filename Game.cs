@@ -13,10 +13,11 @@ public static unsafe class Game
     public static bool EnableSpectating { get; set; } = false;
     public static bool IsSpectating { get; private set; } = false;
 
-    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 45 0F 57 FF", new byte?[] { 0x30, 0xC0, 0x90, 0x90, 0x90 }, Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+    // xor al, al
+    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? F3 44 0F 10 BD", [ 0x30, 0xC0, 0x90, 0x90, 0x90 ], Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
     private static AsmPatch addMidHookReplacer;
 
-    [HypostasisSignatureInjection("F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F", Static = true, Required = true)] // F3 0F 59 05 ?? ?? ?? ?? 0F 28 74 24 20 48 83 C4 30 5B C3 0F 57 C0 0F 28 74 24 20 48 83 C4 30 5B C3
+    [HypostasisSignatureInjection("F3 0F 59 35 ?? ?? ?? ?? F3 0F 10 45 ??", Static = true, Required = true)]
     private static float* foVDeltaPtr;
     public static float FoVDelta // 0.08726646751
     {
@@ -28,7 +29,7 @@ public static unsafe class Game
         }
     }
 
-    [HypostasisSignatureInjection("F3 0F 10 05 ?? ?? ?? ?? 0F 2E C6 0F 8A", Offset = 4, Static = true, Required = true)] // Also found at g_PlayerMoveController + 0x54C
+    [HypostasisSignatureInjection("F3 0F 10 05 ?? ?? ?? ?? 0F 2E C7", Offset = 4, Static = true, Required = true)] // Also found at g_PlayerMoveController + 0x54C?
     private static nint forceDisableMovementPtr;
     public static ref int ForceDisableMovement => ref *(int*)forceDisableMovementPtr; // Increments / decrements by 1 to allow multiple things to disable movement at the same time
 
@@ -182,20 +183,20 @@ public static unsafe class Game
         GameCamera.shouldDisplayObject.CreateHook(ShouldDisplayObjectDetour);
 
         // Gross workaround for fixing legacy control's maintain distance
-        var address = DalamudApi.SigScanner.ScanModule("48 85 C9 74 24 48 83 C1 10");
+        /*var address = DalamudApi.SigScanner.ScanModule(""); // F3 0F 5D F2 48 85 D2
         var offset = BitConverter.GetBytes(GameCamera.getCameraMaxMaintainDistance.Address - (address + 0x8));
 
         // mov rcx, rbx
         // call offset
         // jmp 27h
         addMidHookReplacer = new(address,
-            new byte?[] {
+            [
                     0x48, 0x8B, 0xCB,
                     0xE8, offset[0], offset[1], offset[2], offset[3],
                     0xEB, 0x27,
                     0x90, 0x90, 0x90, 0x90
-            },
-            true);
+            ],
+            true);*/
     }
 
     public static void Dispose() { }
