@@ -29,7 +29,7 @@ public class CameraConfigPreset
     public float StartFoV = 0.78f;
     public float MinFoV = 0.69f;
     public float MaxFoV = 0.78f;
-    public float FoVDelta = 0.08726646751f;
+    //public float FoVDelta = 0.08726646751f;
 
     public float MinVRotation = -1.483530f;
     public float MaxVRotation = 0.785398f;

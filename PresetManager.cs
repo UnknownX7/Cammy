@@ -42,7 +42,7 @@ public static class PresetManager
             camera->currentFoV = Math.Min(Math.Max(camera->currentFoV, preset.MinFoV), preset.MaxFoV);
         camera->minFoV = preset.MinFoV;
         camera->maxFoV = preset.MaxFoV;
-        Game.FoVDelta = preset.FoVDelta;
+        //Game.FoVDelta = preset.FoVDelta;
 
         camera->minVRotation = preset.MinVRotation;
         camera->maxVRotation = preset.MaxVRotation;

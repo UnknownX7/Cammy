@@ -111,7 +111,7 @@ public static unsafe class FreeCam
 
             if (!isMainMenu)
             {
-                Game.ForceDisableMovement++;
+                //Game.ForceDisableMovement++;
 
                 if (!death && !displayedControls)
                 {
@@ -130,8 +130,8 @@ public static unsafe class FreeCam
 
             if (!isMainMenu)
             {
-                if (!locked && Game.ForceDisableMovement > 0)
-                    Game.ForceDisableMovement--;
+               // if (!locked && Game.ForceDisableMovement > 0)
+               //     Game.ForceDisableMovement--;
                 PresetManager.DefaultPreset.Apply();
                 PresetManager.DisableCameraPresets();
                 PresetManager.CurrentPreset = prevPresetOverride;
@@ -187,10 +187,10 @@ public static unsafe class FreeCam
         if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ToggleLock]) || InputData.isInputIDReleased.Original(Common.InputData, keybindings[FreeCamBindings.ControllerToggleLock]))
         {
             locked ^= true;
-            if (locked && Game.ForceDisableMovement > 0)
-                Game.ForceDisableMovement--;
-            else
-                Game.ForceDisableMovement++;
+            //if (locked && Game.ForceDisableMovement > 0)
+            //    Game.ForceDisableMovement--;
+            //else
+            //    Game.ForceDisableMovement++;
 
             if (locked)
                 DisableInputBlockers();
@@ -200,7 +200,8 @@ public static unsafe class FreeCam
 
         var loggedIn = DalamudApi.ClientState.IsLoggedIn;
 
-        if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.EndFreeCam]) || InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ControllerEndFreeCam]) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title") == nint.Zero))
+        //if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.EndFreeCam]) || InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ControllerEndFreeCam]) || (loggedIn ? !locked && Game.ForceDisableMovement == 0 : DalamudApi.GameGui.GetAddonByName("Title") == nint.Zero))
+        if (InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.EndFreeCam]) || InputData.isInputIDPressed.Original(Common.InputData, keybindings[FreeCamBindings.ControllerEndFreeCam]) || (loggedIn ? !locked : DalamudApi.GameGui.GetAddonByName("Title") == nint.Zero))
         {
             Toggle();
             return;
