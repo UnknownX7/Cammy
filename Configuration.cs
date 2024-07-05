@@ -11,8 +11,7 @@ public class CameraConfigPreset
         Disabled,
         [Display(Name = "First Person")] FirstPerson,
         [Display(Name = "Out of Combat")] OutOfCombat,
-        Always, 
-        Focus
+        Always
     }
 
     public string Name = "New Preset";
