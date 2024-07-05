@@ -389,10 +389,6 @@ public static class PluginUI
                 FreeCam.Toggle();
             ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
 
-            var ___ = FreeCam.Focused;
-            if (ImGui.Checkbox("Focused", ref ___))
-                FreeCam.Focused = ___;
-
             ImGuiEx.EndGroupBox();
         }
 
