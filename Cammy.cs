@@ -9,7 +9,7 @@ namespace Cammy;
 
 public class Cammy : DalamudPlugin<Configuration>, IDalamudPlugin
 {
-    public Cammy(DalamudPluginInterface pluginInterface) : base(pluginInterface) { }
+    public Cammy(IDalamudPluginInterface pluginInterface) : base(pluginInterface) { }
 
     protected override void Initialize()
     {
