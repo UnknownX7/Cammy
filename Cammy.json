@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": "Added view bobbing, added free cam support for both GPose and Duty Recorder, removed useless settings, fixed several bugs related to camera settings resetting"
+  "Changelog": "Partially fixed for Dawntrail, some features may still be broken!"
 }
