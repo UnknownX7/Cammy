@@ -304,6 +304,10 @@ public static unsafe class FreeCam
         if (!InputData.getAxisInput.IsHooked)
             InputData.getAxisInput.CreateHook((inputData, inputID) => inputID is not (3 or 4) ? InputData.getAxisInput.Original(inputData, inputID) : 0);
         InputData.getAxisInput.Hook.Enable();
+
+        if (!EmoteController.cancelEmote.IsHooked) 
+            EmoteController.cancelEmote.CreateHook((_, _) => false);
+        EmoteController.cancelEmote.Hook.Enable();
     }
 
     private static void DisableInputBlockers()
@@ -313,5 +317,6 @@ public static unsafe class FreeCam
         InputData.isInputIDLongPressed.Hook.Disable();
         InputData.isInputIDReleased.Hook.Disable();
         InputData.getAxisInput.Hook.Disable();
+        EmoteController.cancelEmote.Hook.Disable();
     }
 }
