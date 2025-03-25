@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": "Partially fixed for Dawntrail, some features may still be broken!"
+  "Changelog": "Fixed emotes being canceled during free cam (Thanks to Caraxi)"
 }

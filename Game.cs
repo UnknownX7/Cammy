@@ -14,7 +14,7 @@ public static unsafe class Game
     public static bool IsSpectating { get; private set; } = false;
 
     // xor al, al
-    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? F3 44 0F 10 BD", [ 0x30, 0xC0, 0x90, 0x90, 0x90 ], Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? F3 44 0F 10 B5", [ 0x30, 0xC0, 0x90, 0x90, 0x90 ], Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
     private static AsmPatch addMidHookReplacer;
 
     [HypostasisSignatureInjection("F3 0F 59 35 ?? ?? ?? ?? F3 0F 10 45 ??", Static = true, Required = true)]
@@ -144,10 +144,11 @@ public static unsafe class Game
     public static float? GetDefaultLookAtHeightOffset()
     {
         var worldCamera = Common.CameraManager->worldCamera;
-        if (worldCamera == null || DalamudApi.ClientState.LocalPlayer is not { } p) return 0;
+        var p = GameObjectManager.Instance()->Objects.IndexSorted[0].Value;
+        if (worldCamera == null || p == null) return 0;
 
         var prev = worldCamera->lookAtHeightOffset;
-        if (!GameCamera.updateLookAtHeightOffset.Original(worldCamera, (GameObject*)p.Address, false)) return null;
+        if (!GameCamera.updateLookAtHeightOffset.Original(worldCamera, p, false)) return null;
 
         var ret = worldCamera->lookAtHeightOffset;
         worldCamera->lookAtHeightOffset = prev;
