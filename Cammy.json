@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": "Fixed emotes being canceled during free cam (Thanks to Caraxi)"
+  "Changelog": "Fixed descend keybinding in free cam (Thanks to MBadea21)"
 }
