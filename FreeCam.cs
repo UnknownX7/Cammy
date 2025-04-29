@@ -64,7 +64,7 @@ public static unsafe class FreeCam
         [FreeCamBindings.Right2] = 326, // Strafe Right
         [FreeCamBindings.Ascend] = 348, // Jump
         [FreeCamBindings.Ascend2] = 444, // Ascend
-        [FreeCamBindings.Descend] = 443, // Descent
+        [FreeCamBindings.Descend] = 448, // Descent
         [FreeCamBindings.ToggleLock] = 366, // Cycle through Enemies (Nearest to Farthest)
         [FreeCamBindings.EndFreeCam] = 367, // Cycle through Enemies (Farthest to Nearest)
         [FreeCamBindings.ControllerAscend] = 5, // Controller Jump
