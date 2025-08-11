@@ -14,7 +14,7 @@ public static unsafe class Game
     public static bool IsSpectating { get; private set; } = false;
 
     // xor al, al
-    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? F3 44 0F 10 B5", [ 0x30, 0xC0, 0x90, 0x90, 0x90 ], Cammy.Config.EnableCameraNoClippy); // E8 ?? ?? ?? ?? 48 8B B4 24 E0 00 00 00 40 32 FF (0x90, 0x90, 0x90, 0x90, 0x90)
+    public static readonly AsmPatch cameraNoClippyReplacer = new("E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? F3 0F 10 44 24 ?? 41 B7 01", [ 0x30, 0xC0, 0x90, 0x90, 0x90 ], Cammy.Config.EnableCameraNoClippy);
     private static AsmPatch addMidHookReplacer;
 
     [HypostasisSignatureInjection("F3 0F 59 35 ?? ?? ?? ?? F3 0F 10 45 ??", Static = true, Required = true)]

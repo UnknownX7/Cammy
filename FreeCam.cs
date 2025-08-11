@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Hypostasis.Game.Structures;
-using ImGuiNET;
 
 namespace Cammy;
 
@@ -149,7 +149,7 @@ public static unsafe class FreeCam
         {
             var addon = DalamudApi.GameGui.GetAddonByName(name, 1);
             if (addon == nint.Zero) return;
-            ((AtkUnitBase*)addon)->IsVisible ^= true;
+            ((AtkUnitBase*)addon.Address)->IsVisible ^= true;
         }
 
         ToggleAddonVisible("_TitleRights");
