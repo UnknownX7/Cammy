@@ -13,5 +13,6 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": ""
+  "DalamudApiLevel": 14,
+  "Changelog": "Updated for API14"
 }

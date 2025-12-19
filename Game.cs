@@ -82,7 +82,7 @@ public static unsafe class Game
             }
             else
             {
-                if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled && (nint)target == DalamudApi.ClientState.LocalPlayer?.Address)
+                if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled && (nint)target == DalamudApi.ObjectTable.LocalPlayer?.Address)
                 {
                     var defaultLookAtHeightOffset = GetDefaultLookAtHeightOffset();
                     if (defaultLookAtHeightOffset.HasValue)
@@ -158,13 +158,13 @@ public static unsafe class Game
     public static Bool UpdateLookAtHeightOffsetDetour(GameCamera* camera, GameObject* o, Bool zero)
     {
         var ret = GameCamera.updateLookAtHeightOffset.Original(camera, o, zero);
-        if (ret && !zero && (nint)o == DalamudApi.ClientState.LocalPlayer?.Address && PresetManager.CurrentPreset != PresetManager.DefaultPreset)
+        if (ret && !zero && (nint)o == DalamudApi.ObjectTable.LocalPlayer?.Address && PresetManager.CurrentPreset != PresetManager.DefaultPreset)
             camera->lookAtHeightOffset = PresetManager.CurrentPreset.LookAtHeightOffset;
         return ret;
     }
 
     public static Bool ShouldDisplayObjectDetour(GameCamera* camera, GameObject* o, Vector3* cameraPosition, Vector3* cameraLookAt) =>
-        ((nint)o != DalamudApi.ClientState.LocalPlayer?.Address || camera != Common.CameraManager->worldCamera || camera->mode != 0 || (camera->transition != 0 && camera->controlType <= 2)) && GameCamera.shouldDisplayObject.Original(camera, o, cameraPosition, cameraLookAt);
+        ((nint)o != DalamudApi.ObjectTable.LocalPlayer?.Address || camera != Common.CameraManager->worldCamera || camera->mode != 0 || (camera->transition != 0 && camera->controlType <= 2)) && GameCamera.shouldDisplayObject.Original(camera, o, cameraPosition, cameraLookAt);
 
     public static void Initialize()
     {
