@@ -132,7 +132,11 @@ public class Cammy(IDalamudPluginInterface pluginInterface) : DalamudPlugin<Conf
         PresetManager.Update();
     }
 
-    protected override void Draw() => PluginUI.Draw();
+    protected override void Draw()
+    {
+        FreeCam.Draw();
+        PluginUI.Draw();
+    }
 
     private static bool didLogin = false; // Workaround
     private static void Login()

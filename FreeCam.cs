@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Hypostasis.Game.Structures;
 
@@ -33,6 +35,8 @@ public static unsafe class FreeCam
     private static float prevZoom = 0;
     private static float prevFoV = 0;
     private static bool displayedControls = false;
+    private static readonly List<(Vector3, Vector2)> savedPositions = [];
+    private static float advancedControlsAlpha;
 
     private enum FreeCamBindings
     {
@@ -87,9 +91,8 @@ public static unsafe class FreeCam
 
     public static void Toggle(bool death = false)
     {
-        var enable = !Enabled;
         var isMainMenu = !DalamudApi.Condition.Any();
-        if (enable)
+        if (!Enabled)
         {
             EnableInputBlockers();
 
@@ -102,6 +105,7 @@ public static unsafe class FreeCam
             prevPresetOverride = PresetManager.PresetOverride;
             prevZoom = gameCamera->currentZoom;
             prevFoV = gameCamera->currentFoV;
+            advancedControlsAlpha = 1;
 
             freeCamPreset.MinFoV = freeCamPreset.MaxFoV = gameCamera->currentFoV;
             freeCamPreset.Apply();
@@ -280,6 +284,88 @@ public static unsafe class FreeCam
             gameCamera->lookAtY = gameCamera->lookAtY2 += y;
             gameCamera->lookAtZ += z;
         }
+    }
+
+    public static void Draw()
+    {
+        if (!Enabled || !Cammy.Config.EnableAdvancedFreeCamControls) return;
+
+        ImGui.SetNextWindowSizeConstraints(new Vector2(300, 200) * ImGuiHelpers.GlobalScale, Vector2.PositiveInfinity);
+
+        var useAlpha = Cammy.Config.FadeOutAdvancedFreeCamControls;
+        var dt = ImGui.GetIO().DeltaTime;
+        using var _ = ImGuiEx.StyleVarBlock.Begin(ImGuiStyleVar.Alpha, advancedControlsAlpha, useAlpha);
+        if (!ImGui.Begin("Advanced Controls"))
+        {
+            if (useAlpha)
+                advancedControlsAlpha = ImGui.IsWindowHovered(ImGuiHoveredFlags.RootAndChildWindows | ImGuiHoveredFlags.RectOnly) ? 1 : Math.Max(advancedControlsAlpha - dt / 2, 0.001f);
+            ImGui.End();
+            return;
+        }
+
+        ImGui.DragFloat3("Position", ref position, 0.1f);
+
+        var rotation = new Vector2(float.RadiansToDegrees(Common.CameraManager->worldCamera->currentHRotation), float.RadiansToDegrees(Common.CameraManager->worldCamera->currentVRotation));
+        if (ImGui.DragFloat2("Rotation", ref rotation, 0.1f))
+        {
+            Common.CameraManager->worldCamera->currentHRotation = float.DegreesToRadians(rotation.X);
+            Common.CameraManager->worldCamera->currentVRotation = float.DegreesToRadians(rotation.Y);
+        }
+
+        if (ImGui.Button("Save Position"))
+            savedPositions.Add((position, rotation));
+
+        ImGui.SameLine();
+
+        ImGui.Button("Clear");
+        if (ImGui.BeginPopupContextItem(ImU8String.Empty, ImGuiPopupFlags.MouseButtonLeft))
+        {
+            ImGui.PushFont(UiBuilder.IconFont);
+            if (ImGui.Selectable(FontAwesomeIcon.TrashAlt.ToIconString()))
+                savedPositions.Clear();
+            ImGui.PopFont();
+            ImGui.EndPopup();
+        }
+
+        ImGui.SameLine();
+
+        if (ImGui.Checkbox("Fade Window", ref Cammy.Config.FadeOutAdvancedFreeCamControls))
+        {
+            advancedControlsAlpha = 1;
+            Cammy.Config.Save();
+        }
+
+        ImGui.Separator();
+
+        ImGui.BeginChild("SavedFreeCamPositions");
+
+        for (int i = 0; i < savedPositions.Count; i++)
+        {
+            var (pos, rot) = savedPositions[i];
+
+            var clicked = ImGui.Selectable($"P: {pos:F1} R: {rot:F1}##{i}");
+            if (ImGui.BeginPopupContextItem(ImU8String.Empty))
+            {
+                ImGui.PushFont(UiBuilder.IconFont);
+                if (ImGui.Selectable(FontAwesomeIcon.TrashAlt.ToIconString()))
+                    savedPositions.RemoveAt(i);
+                ImGui.PopFont();
+                ImGui.EndPopup();
+            }
+
+            if (!clicked) continue;
+
+            position = pos;
+            Common.CameraManager->worldCamera->currentHRotation = float.DegreesToRadians(rot.X);
+            Common.CameraManager->worldCamera->currentVRotation = float.DegreesToRadians(rot.Y);
+        }
+
+        ImGui.EndChild();
+
+        if (useAlpha)
+            advancedControlsAlpha = ImGui.IsWindowHovered(ImGuiHoveredFlags.RootAndChildWindows | ImGuiHoveredFlags.RectOnly) ? 1 : Math.Max(advancedControlsAlpha - dt / 2, 0.001f);
+
+        ImGui.End();
     }
 
     // Obnoxious

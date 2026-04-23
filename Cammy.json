@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": "Fix disconnects not reapply presets on login"
+  "Changelog": "Added advanced free cam controls"
 }

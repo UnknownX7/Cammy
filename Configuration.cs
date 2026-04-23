@@ -61,4 +61,6 @@ public class Configuration : PluginConfiguration, IPluginConfiguration
     public List<CameraConfigPreset> Presets = [];
     public bool EnableCameraNoClippy = false;
     public DeathCamSetting DeathCamMode = DeathCamSetting.Disabled;
+    public bool EnableAdvancedFreeCamControls = false;
+    public bool FadeOutAdvancedFreeCamControls = false;
 }

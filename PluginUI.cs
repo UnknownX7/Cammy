@@ -387,6 +387,8 @@ public static class PluginUI
                 FreeCam.Toggle();
             ImGuiEx.SetItemTooltip(FreeCam.ControlsString);
 
+            save |= ImGui.Checkbox("Enable Advanced Free Cam Controls", ref Cammy.Config.EnableAdvancedFreeCamControls);
+
             ImGuiEx.EndGroupBox();
         }
 
