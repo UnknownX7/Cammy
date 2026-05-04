@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using Dalamud.Game.ClientState.Conditions;
 
 namespace Cammy;
 
@@ -21,6 +22,7 @@ public static class PresetManager
     public static CameraConfigPreset ActivePreset { get; private set; }
 
     public static CameraConfigPreset PresetOverride { get; private set; }
+    private static bool lastBetweenAreas = false;
 
     public static unsafe void ApplyPreset(CameraConfigPreset preset, bool isLoggingIn = false)
     {
@@ -62,7 +64,25 @@ public static class PresetManager
 
     public static void Update()
     {
-        if (!DalamudApi.ClientState.IsLoggedIn || FreeCam.Enabled || PresetOverride != null) return;
+        if (!DalamudApi.ClientState.IsLoggedIn || FreeCam.Enabled) return;
+
+        var isBetweenAreas = DalamudApi.Condition[ConditionFlag.BetweenAreas] || DalamudApi.Condition[ConditionFlag.BetweenAreas51];
+        if (isBetweenAreas)
+        {
+            lastBetweenAreas = true;
+            return;
+        }
+
+        if (lastBetweenAreas)
+        {
+            lastBetweenAreas = false;
+            if (PresetOverride != null)
+                ApplyPreset(PresetOverride);
+            else
+                ActivePreset = null;
+        }
+
+        if (PresetOverride != null) return;
         CheckCameraConditionSets(false);
     }
 
