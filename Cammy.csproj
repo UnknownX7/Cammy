@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Dalamud.NET.Sdk/15.0.0">
 
     <PropertyGroup>
-        <Version>2.1.1.1</Version>
+        <Version>2.1.1.2</Version>
         <Nullable>disable</Nullable>
         <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
     </PropertyGroup>

@@ -13,5 +13,5 @@
   ],
   "InternalName": "Cammy",
   "AssemblyVersion": "9.9.9.9",
-  "Changelog": "Added advanced free cam controls"
+  "Changelog": "Fix camera resetting to default on zoning (Thanks to Chat Ja)"
 }
