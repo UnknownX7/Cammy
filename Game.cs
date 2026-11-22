@@ -62,11 +62,14 @@ public static unsafe class Game
                 if (target != prevCameraTarget)
                     prevCameraTargetPosition = target->Position;
 
+                var dt = (float)DalamudApi.Framework.UpdateDelta.TotalSeconds;
                 var newPos = Common.GetBoneWorldPosition(target, 26) + ((Vector3)target->Position - prevCameraTargetPosition);
+                newPos = ApplyViewBobSettings(preset, target, newPos, dt, target != prevCameraTarget);
+
                 var d = target->Position.Y - interpolatedHeight;
                 if (target == prevCameraTarget && d is > -3 and < 3)
                 {
-                    var amount = d * (float)DalamudApi.Framework.UpdateDelta.TotalSeconds * 10;
+                    var amount = d * dt * preset.ViewBobHeightFollowSpeed;
                     interpolatedHeight = d >= 0
                         ? Math.Max(interpolatedHeight + Math.Min(Math.Max(amount, 0), d), target->Position.Y - 0.7f)
                         : Math.Min(interpolatedHeight + Math.Max(Math.Min(amount, 0), d), target->Position.Y + 0.7f);
@@ -106,6 +109,31 @@ public static unsafe class Game
         {
             *position = FreeCam.Position;
         }
+    }
+
+    private static Vector3 smoothedHeadOffset;
+    // Splits the head position (relative to the character, in the character's local space) into a smoothed "steady" part and the
+    // bob around it, then rescales the bob per axis. With intensities of 1 and no forward offset this returns the input unchanged.
+    private static Vector3 ApplyViewBobSettings(CameraConfigPreset preset, GameObject* target, Vector3 headPosition, float dt, bool reset)
+    {
+        var targetPosition = (Vector3)target->Position;
+        var (sin, cos) = MathF.SinCos(target->Rotation);
+        var forward = new Vector3(sin, 0, cos);
+        var right = new Vector3(cos, 0, -sin);
+
+        var offset = headPosition - targetPosition;
+        var localOffset = new Vector3(Vector3.Dot(offset, right), offset.Y, Vector3.Dot(offset, forward));
+
+        if (reset || dt <= 0)
+            smoothedHeadOffset = localOffset;
+        else
+            smoothedHeadOffset = Vector3.Lerp(smoothedHeadOffset, localOffset, 1 - MathF.Exp(-dt / Math.Max(preset.ViewBobStabilizationTime, 0.01f)));
+
+        var bob = localOffset - smoothedHeadOffset;
+        localOffset = smoothedHeadOffset + bob * new Vector3(preset.ViewBobHorizontalIntensity, preset.ViewBobVerticalIntensity, preset.ViewBobHorizontalIntensity);
+        localOffset.Z += preset.ViewBobForwardOffset;
+
+        return targetPosition + right * localOffset.X + Vector3.UnitY * localOffset.Y + forward * localOffset.Z;
     }
 
     private static GameObject* GetCameraTargetDetour(GameCamera* camera)

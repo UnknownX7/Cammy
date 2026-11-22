@@ -38,6 +38,11 @@ public class CameraConfigPreset
     public float Tilt = 0;
     public float LookAtHeightOffset = Game.GetDefaultLookAtHeightOffset() ?? 0;
     public ViewBobSetting ViewBobMode = ViewBobSetting.Disabled;
+    public float ViewBobVerticalIntensity = 1;
+    public float ViewBobHorizontalIntensity = 1;
+    public float ViewBobStabilizationTime = 0.25f;
+    public float ViewBobHeightFollowSpeed = 10;
+    public float ViewBobForwardOffset = 0;
     public int ConditionSet = -1;
 
     public CameraConfigPreset Clone() => (CameraConfigPreset)MemberwiseClone();

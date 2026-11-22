@@ -304,6 +304,24 @@ public static class PluginUI
         if (ImGuiEx.EnumCombo("View Bobbing", ref preset.ViewBobMode))
             Cammy.Config.Save();
 
+        if (preset.ViewBobMode != CameraConfigPreset.ViewBobSetting.Disabled)
+        {
+            ImGui.Indent();
+            ResetSliderFloat("Vertical Bob Intensity", ref preset.ViewBobVerticalIntensity, 0, 2, 1, "%.2f");
+            ImGuiEx.SetItemTooltip("Scales the up / down head movement while walking or running.\n0 = steady, 1 = default, above 1 = exaggerated.");
+            ResetSliderFloat("Horizontal Bob Intensity", ref preset.ViewBobHorizontalIntensity, 0, 2, 1, "%.2f");
+            ImGuiEx.SetItemTooltip("Scales the side to side / forward and back head sway.\n0 = steady, 1 = default, above 1 = exaggerated.");
+            ResetSliderFloat("Bob Stabilization Time", ref preset.ViewBobStabilizationTime, 0.05f, 1, 0.25f, "%.2f s");
+            ImGuiEx.SetItemTooltip("How slowly the steady head position follows the head when the intensities are below 1." +
+                "\nHigher values filter out more of the bobbing but react slower to larger movements (sitting, emotes, etc.)." +
+                "\nHas no effect while both intensities are at 1.");
+            ResetSliderFloat("Height Follow Speed", ref preset.ViewBobHeightFollowSpeed, 1, 50, 10, "%.1f");
+            ImGuiEx.SetItemTooltip("How quickly the camera follows height changes such as stairs and jumping.\nLower values are smoother.");
+            ResetSliderFloat("Head Forward Offset", ref preset.ViewBobForwardOffset, -0.5f, 0.5f, 0, "%.2f");
+            ImGuiEx.SetItemTooltip("Moves the camera forward / backward from the head bone, in the direction the character is facing.");
+            ImGui.Unindent();
+        }
+
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
