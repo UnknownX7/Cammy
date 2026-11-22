@@ -63,13 +63,15 @@ public static unsafe class Game
                     prevCameraTargetPosition = target->Position;
 
                 var dt = (float)DalamudApi.Framework.UpdateDelta.TotalSeconds;
-                var newPos = Common.GetBoneWorldPosition(target, 26) + ((Vector3)target->Position - prevCameraTargetPosition);
-                newPos = ApplyViewBobSettings(preset, target, newPos, dt, target != prevCameraTarget);
+                // The bone position lags one frame behind, so measure the head offset from last frame's position and add the movement
+                // compensation afterwards, otherwise the per frame movement would be treated (and scaled) as bobbing
+                var newPos = ApplyViewBobSettings(preset, target, Common.GetBoneWorldPosition(target, 26), prevCameraTargetPosition, dt, target != prevCameraTarget)
+                    + ((Vector3)target->Position - prevCameraTargetPosition);
 
                 var d = target->Position.Y - interpolatedHeight;
                 if (target == prevCameraTarget && d is > -3 and < 3)
                 {
-                    var amount = d * dt * preset.ViewBobHeightFollowSpeed;
+                    var amount = d * dt * Math.Max(preset.ViewBobHeightFollowSpeed, 0.1f);
                     interpolatedHeight = d >= 0
                         ? Math.Max(interpolatedHeight + Math.Min(Math.Max(amount, 0), d), target->Position.Y - 0.7f)
                         : Math.Min(interpolatedHeight + Math.Max(Math.Min(amount, 0), d), target->Position.Y + 0.7f);
@@ -108,15 +110,15 @@ public static unsafe class Game
         else
         {
             *position = FreeCam.Position;
+            prevCameraTarget = null;
         }
     }
 
     private static Vector3 smoothedHeadOffset;
     // Splits the head position (relative to the character, in the character's local space) into a smoothed "steady" part and the
     // bob around it, then rescales the bob per axis. With intensities of 1 and no forward offset this returns the input unchanged.
-    private static Vector3 ApplyViewBobSettings(CameraConfigPreset preset, GameObject* target, Vector3 headPosition, float dt, bool reset)
+    private static Vector3 ApplyViewBobSettings(CameraConfigPreset preset, GameObject* target, Vector3 headPosition, Vector3 targetPosition, float dt, bool reset)
     {
-        var targetPosition = (Vector3)target->Position;
         var (sin, cos) = MathF.SinCos(target->Rotation);
         var forward = new Vector3(sin, 0, cos);
         var right = new Vector3(cos, 0, -sin);
